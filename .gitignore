@@ -1,0 +1,12 @@
+data/
+.DS_Store
+.env.local
+.env
+.env.*
+!.env.example
+node_modules/
+exports/
+sources/
+AGENTS.md
+.codex/
+.agents/

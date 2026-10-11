@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="地点照片占位插画">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#dce9df"/><stop offset="1" stop-color="#f7e8d5"/></linearGradient>
+    <linearGradient id="hill" x2="0" y2="1"><stop stop-color="#8fb7a0"/><stop offset="1" stop-color="#568a78"/></linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <circle cx="478" cy="94" r="44" fill="#f3d7a2" opacity=".9"/>
+  <path d="M0 262 117 180l68 46 120-114 142 130 83-68 110 83v103H0Z" fill="#b6d0bb"/>
+  <path d="M0 306 124 232l93 54 116-93 133 102 74-51 100 50v66H0Z" fill="url(#hill)"/>
+  <path d="M0 322q163-64 319 4 149-70 321-22v56H0Z" fill="#407764" opacity=".58"/>
+  <path d="M290 360q68-101 121-167" fill="none" stroke="#f5ead4" stroke-width="21" stroke-linecap="round" opacity=".85"/>
+</svg>

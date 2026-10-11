@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff2c9">
+  <title>旅伴地图 · 一起把旅行聊出来</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/emoji-theme.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="/qrcode.min.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div id="entryScreen" class="entry-screen">
+    <section id="splashScreen" class="splash-screen" aria-label="旅伴地图开屏动画">
+      <div class="splash-sky" aria-hidden="true">
+        <span class="splash-deco deco-sun">☀️</span><span class="splash-deco deco-cloud-one">☁️</span><span class="splash-deco deco-cloud-two">☁️</span>
+        <span class="splash-deco deco-plane">✈️</span><span class="splash-deco deco-pin">📍</span><span class="splash-deco deco-sparkle">🤩</span>
+      </div>
+      <div class="splash-copy"><div class="splash-kicker">😊 TRAVEL TOGETHER</div><h1>下一站，<br>我们一起决定。<span>😄</span></h1><p>把想去的地方放上地图，和旅伴一路聊出来。</p><div class="splash-stickers"><span>🍜 吃什么</span><span>🎡 去哪里</span><span>🛏️ 住哪儿</span></div><button id="skipIntroButton" class="splash-enter" type="button">进入旅伴地图 <span aria-hidden="true">→</span></button><div class="splash-enter-hint">动画结束后，点这里继续</div></div>
+      <div class="splash-car" aria-hidden="true"><div class="splash-car-window"><span>😄</span><span>🤠</span><span>😎</span></div><span class="splash-vehicle">🚐</span><span class="splash-luggage">🧳</span><span class="splash-dust">💨</span></div>
+      <div class="splash-road"><span class="road-stripe"></span><span class="road-stop stop-food">🍜</span><span class="road-stop stop-play">🎡</span><span class="road-stop stop-photo">📸</span></div>
+    </section>
+    <main id="welcomeScreen" class="welcome-screen" hidden><div class="welcome-left"><div class="welcome-brand"><span>🧳</span><strong>旅伴地图</strong></div><div class="welcome-copy"><div class="welcome-kicker">A BETTER WAY TO TRAVEL TOGETHER</div><h1>一起出发，<br><em>一路有话说。</em></h1><p>收藏、讨论、规划。每一站都由旅伴一起决定。</p></div><div class="welcome-scene" aria-hidden="true"><div class="welcome-orbit orbit-a"></div><div class="welcome-orbit orbit-b"></div><div class="welcome-map-card"><div class="welcome-route-line"></div><span class="welcome-pin pin-a">🍜</span><span class="welcome-pin pin-b">🎡</span><span class="welcome-pin pin-c">🛏️</span><span class="welcome-pin pin-d">📍</span></div><div class="welcome-note">💬 “这家店我想去！” <span>😍 3</span></div><span class="welcome-floating float-suitcase">🧳</span><span class="welcome-floating float-camera">📸</span><span class="welcome-floating float-sparkle">✨</span></div><div class="welcome-footer">地图上的每个想法，都会变成我们的故事。</div></div><div class="welcome-right"><div id="entryContent" class="entry-content"></div></div></main>
+  </div>
+  <div class="app-shell" id="appShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <div class="brand-mark">🧳</div>
+        <div class="brand-copy"><strong>旅伴地图</strong><span>把旅行一起聊出来</span></div>
+        <button class="account-button" id="accountButton" type="button" title="登录或查看账号">登录</button>
+        <button class="icon-button soft" id="newTripButton" title="创建新旅行" aria-label="创建新旅行">✨</button>
+      </div>
+      <section id="tripSummary" class="trip-summary"></section>
+      <section id="membersBlock" class="members-block"></section>
+      <nav class="trip-nav" id="tripNav" aria-label="旅行工作区">
+        <button data-view="schedule" aria-haspopup="dialog">🗓️ <span>行程规划</span></button>
+        <button data-view="activity">💬 <span>协作动态</span></button>
+      </nav>
+      <div class="side-section-heading"><span>地点收藏</span><span id="placeCount" class="count-pill">0</span></div>
+      <div class="view-switch" id="viewSwitch">
+        <button data-view="places" class="active">地点</button>
+        <button data-view="eat">🍜 吃</button>
+        <button data-view="play">⛩️ 玩</button>
+        <button data-view="hotels">酒店</button>
+      </div>
+      <div id="listControls" class="list-controls">
+        <label class="search-box"><span>🔎</span><input id="placeSearch" placeholder="搜索这趟旅行的地点" autocomplete="off"></label>
+        <div id="filterChips" class="filter-chips"></div>
+      </div>
+      <div id="sidebarContent" class="sidebar-content"></div>
+      <div class="sidebar-bottom">
+        <button class="primary-button full" id="addPlaceButton"><span>📍</span> 添加地点</button>
+      </div>
+      <div class="panel-resizer" id="leftResizer" role="separator" aria-label="调整地点面板宽度" aria-orientation="vertical" aria-valuemin="240" aria-valuemax="580" tabindex="0" title="拖动调整地点面板宽度"></div>
+    </aside>
+
+    <main class="map-pane">
+      <div id="map" class="map"></div>
+      <div id="mapFallback" class="map-fallback" hidden><div>地图暂时无法加载</div><small>检查网络后刷新页面，或继续在右侧讨论。</small></div>
+      <div class="map-topbar">
+        <button class="panel-toggle" id="toggleSidebarButton" aria-label="收起地点面板" title="收起地点面板">☷</button>
+        <button class="home-button" id="homeButton" type="button" aria-label="返回项目首页" title="返回项目首页">🏠 <span>项目首页</span></button>
+        <div class="map-title"><span class="map-title-icon">🗺️</span><span id="mapTitle">我们的旅行地图</span></div>
+        <div class="map-actions">
+          <span class="connection" id="connection"><i></i>连接中</span>
+          <button class="ghost-button" id="mapPoiButton" aria-label="查附近" hidden>🔎 查附近</button>
+          <button class="ghost-button map-info-button" id="mapInfoButton" title="地图来源与详情" aria-label="地图来源与详情">ⓘ</button>
+          <button class="ghost-button" id="shareButton" aria-label="邀请伙伴">↗ 邀请伙伴</button>
+          <button class="panel-toggle" id="toggleDiscussionButton" aria-label="收起讨论面板" title="收起讨论面板">💬<span class="unread-badge" id="discussionToggleUnread" hidden></span></button>
+        </div>
+      </div>
+      <div class="map-day-bar" id="mapDayBar"></div>
+      <div class="route-preview" id="routePreview" hidden></div>
+      <div class="map-bottom-hint" id="mapHint">点地点打开详情 · 地图空白处收起详情</div>
+      <button class="map-add-button" id="mapAddButton" aria-label="提出地点">📍</button>
+      <div class="mobile-nav" id="mobileNav">
+        <button data-mobile="map" class="active">🗺️<span>地图</span></button>
+        <button data-mobile="list">📍<span>地点</span></button>
+        <button data-mobile="chat">💬<span>讨论</span><span class="unread-badge" id="mobileChatUnread" hidden></span></button>
+      </div>
+    </main>
+
+    <aside class="discussion-pane" id="discussionPane">
+      <div class="panel-resizer" id="rightResizer" role="separator" aria-label="调整讨论面板宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="620" tabindex="0" title="拖动调整讨论面板宽度"></div>
+      <div id="discussionContent" class="discussion-content"></div>
+    </aside>
+  </div>
+
+  <div id="scheduleOverlay" class="schedule-overlay" hidden>
+    <div class="schedule-scrim" data-close-schedule></div>
+    <section class="schedule-page" role="dialog" aria-modal="true" aria-labelledby="schedulePageTitle">
+      <header class="schedule-page-head"><div><small>TRIP PLAN · 逐日路线</small><h2 id="schedulePageTitle">行程规划</h2><p id="schedulePageSubtitle"></p></div><button type="button" class="schedule-close" data-close-schedule aria-label="关闭行程规划">×</button></header>
+      <div class="schedule-page-content" id="schedulePageContent"></div>
+    </section>
+  </div>
+  <div id="modalRoot" class="modal-root" hidden></div>
+  <div id="toast" class="toast" hidden></div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.git
+.env*
+!.env.example
+data
+exports
+sources
+tests
+README.md
+PRODUCT_LOGIC.md
+AGENTS.md

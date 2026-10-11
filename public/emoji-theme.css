@@ -1,0 +1,250 @@
+/* Shared emoji travel look. Keep map tiles and route colors readable. */
+:root {
+  --paper: #fff9ed;
+  --white: #fffefa;
+  --ink: #273b3b;
+  --muted: #71817c;
+  --line: #e9dfce;
+  --teal: #168f83;
+  --teal-dark: #116e69;
+  --peach: #f58a67;
+  --shadow: 0 18px 48px rgba(76, 87, 65, .14);
+}
+body { background: var(--paper); }
+button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
+button:hover:not(:disabled) { transform: translateY(-2px); }
+button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #ffb35c; outline-offset: 2px; }
+
+/* Emoji only opening scene */
+.splash-screen { background: #fff5dc; color: #243d43; }
+.splash-sky { background: radial-gradient(circle at 18% 22%, #fff7b9 0 9%, transparent 35%), linear-gradient(170deg, #d6f7f0, #f7f9df 53%, #ffe7d5); }
+.splash-deco { position: absolute; display: block; font-family: 'Apple Color Emoji','Segoe UI Emoji',sans-serif; filter: drop-shadow(0 10px 10px rgba(64,91,88,.12)); }
+.deco-sun { top: 9%; right: 17%; font-size: clamp(76px, 10vw, 150px); animation: emojiOrbit 9s ease-in-out infinite; }
+.deco-cloud-one { top: 5%; left: 40%; font-size: clamp(66px, 8vw, 125px); animation: emojiFloat 6s ease-in-out infinite; }
+.deco-cloud-two { top: 31%; right: 7%; font-size: clamp(45px, 5vw, 85px); animation: emojiFloat 7s ease-in-out -2s infinite; }
+.deco-plane { top: 25%; right: 32%; font-size: clamp(43px, 6vw, 76px); transform: rotate(-17deg); animation: emojiPlane 4s ease-in-out infinite; }
+.deco-pin { bottom: 25%; right: 8%; font-size: clamp(48px, 6vw, 82px); animation: emojiHop 2s ease-in-out infinite; }
+.deco-sparkle { left: 46%; top: 12%; font-size: 48px; animation: emojiTwinkle 2.5s ease-in-out infinite; }
+.splash-copy { z-index: 5; margin-top: clamp(60px, 9vh, 105px); }
+.splash-kicker { display: inline-flex; align-items: center; padding: 9px 16px; border: 2px solid #233f41; border-radius: 99px; background: #fff; box-shadow: 4px 5px 0 #f7c26d; color: #2b5758; letter-spacing: .13em; }
+.splash-copy h1 { max-width: 800px; margin-top: 24px; font-weight: 700; font-size: clamp(48px, 6.4vw, 88px); line-height: 1.16; text-shadow: 4px 5px 0 rgba(255,255,255,.75); }
+.splash-copy h1 span { display: inline-block; font-size: .62em; vertical-align: middle; animation: emojiWiggle 2.8s ease-in-out infinite; }
+.splash-copy p { color: #516d70; font-size: clamp(14px, 1.5vw, 20px); font-weight: 600; }
+.splash-stickers { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 27px; }
+.splash-stickers span { padding: 8px 13px; border: 2px solid #314a49; border-radius: 99px; background: #fff; box-shadow: 3px 4px 0 rgba(55,77,76,.16); font-size: 12px; font-weight: 700; animation: emojiFloat 3.8s ease-in-out infinite; }
+.splash-stickers span:nth-child(2) { animation-delay: -.8s; background: #f1e8ff; }
+.splash-stickers span:nth-child(3) { animation-delay: -1.6s; background: #ffe7d7; }
+.splash-car { z-index: 6; bottom: 9%; width: clamp(270px, 34vw, 480px); height: clamp(170px, 22vw, 300px); transform: translateX(-130%); animation: emojiRide 3s cubic-bezier(.35,.1,.68,.9) forwards; }
+.splash-car-window { position: absolute; z-index: 5; left: 16%; right: 20%; top: 18%; display: flex; justify-content: space-around; align-items: flex-end; padding: 7px 5px 3px; border: 4px solid #394848; border-radius: 28px 28px 12px 12px; background: rgba(228,251,255,.88); box-shadow: inset 0 -10px 0 rgba(86,172,183,.2); transform: rotate(-4deg); }
+.splash-car-window span { font-size: clamp(38px, 5vw, 67px); line-height: 1; animation: emojiBob .5s ease-in-out infinite alternate; }
+.splash-car-window span:nth-child(2) { animation-delay: -.22s; }.splash-car-window span:nth-child(3) { animation-delay: -.11s; }
+.splash-vehicle { position: absolute; z-index: 3; left: 5%; bottom: -5%; font-family: 'Apple Color Emoji','Segoe UI Emoji',sans-serif; font-size: clamp(185px, 26vw, 355px); line-height: 1; filter: drop-shadow(4px 15px 8px rgba(46,56,54,.25)); }
+.splash-luggage { position: absolute; z-index: 4; top: 0; right: 4%; font-size: clamp(40px, 5vw, 70px); animation: emojiWiggle .8s ease-in-out infinite alternate; }
+.splash-dust { position: absolute; left: -18%; bottom: 13%; font-size: clamp(33px, 4vw, 60px); white-space: nowrap; animation: emojiDust .65s ease-in-out infinite alternate; }
+.splash-road { background: #6a8580; border-top: 10px solid #f7cc84; }
+.splash-road .road-stripe { position: absolute; left: 0; right: 0; top: 60%; height: 7px; background: repeating-linear-gradient(90deg,#ffe8aa 0 65px,transparent 65px 128px); animation: roadMove .7s linear infinite; }
+.road-stop { position: absolute; z-index: 4; top: -65px; font-size: 48px; filter: drop-shadow(0 6px 4px rgba(36,55,48,.18)); animation: emojiHop 2.1s ease-in-out infinite; }
+.stop-food { left: 12%; }.stop-play { left: 58%; animation-delay: -.6s; }.stop-photo { right: 10%; animation-delay: -1.1s; }
+.splash-skip { border: 2px solid #2c4f4d; box-shadow: 3px 4px 0 #f2ae72; background: #fff; color: #315d59; }
+@keyframes emojiRide { 0% { transform: translateX(-140%) rotate(-5deg); } 48% { transform: translateX(44vw) rotate(1deg); } 100% { transform: translateX(145vw) rotate(1deg); } }
+@keyframes emojiFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes emojiHop { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } }
+@keyframes emojiBob { to { transform: translateY(4px) rotate(3deg); } }
+@keyframes emojiWiggle { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(9deg); } }
+@keyframes emojiTwinkle { 0%,100% { opacity: .65; transform: scale(.85) rotate(-12deg); } 50% { opacity: 1; transform: scale(1.22) rotate(12deg); } }
+@keyframes emojiOrbit { 0%,100% { transform: rotate(-6deg) scale(1); } 50% { transform: rotate(7deg) scale(1.05); } }
+@keyframes emojiPlane { 0%,100% { transform: translate(0,0) rotate(-17deg); } 50% { transform: translate(22px,-20px) rotate(-12deg); } }
+@keyframes emojiDust { to { transform: translateX(-9px); opacity: .55; } }
+
+/* Entry, login, and projects */
+.entry-screen { background: #fff8e9; }
+.welcome-screen { background: #fffefa; }
+.welcome-left { background: radial-gradient(circle at 10% 90%,#c7f3dd 0 18%,transparent 43%), linear-gradient(155deg,#d8f5ee,#fff0cd); }
+.welcome-brand span, .brand-mark { background: #fff3cc; border: 2px solid #ffca75; border-radius: 16px; box-shadow: 3px 4px 0 rgba(63,109,102,.12); animation: emojiWiggle 4s ease-in-out infinite; }
+.welcome-copy h1 em { color: #ec7462; }
+.welcome-copy p, .welcome-footer { color: #567874; }
+.welcome-map-card { background: repeating-linear-gradient(0deg,transparent 0 44px,rgba(54,136,111,.09) 44px 46px),repeating-linear-gradient(90deg,transparent 0 44px,rgba(54,136,111,.09) 44px 46px),#f5fff4; border-color: #fffefa; box-shadow: 9px 15px 0 rgba(57,132,109,.16),0 24px 50px rgba(42,80,75,.13); }
+.welcome-route-line { position: absolute; left: 18%; top: 42%; width: 63%; height: 34%; border-top: 7px dotted #ff9a67; border-radius: 50%; transform: rotate(-22deg); }
+.welcome-pin { width: 62px; height: 62px; border: 3px solid #fff; border-radius: 20px; font-size: 31px; animation: emojiHop 3.2s ease-in-out infinite; }
+.welcome-pin.pin-b { animation-delay: -.8s; }.welcome-pin.pin-c { animation-delay: -1.6s; }.welcome-pin.pin-d { left: 68%; top: 66%; animation-delay: -2.4s; }
+.welcome-note { border: 2px solid #ffd5a2; font-size: 13px; }
+.welcome-floating { position: absolute; z-index: 2; font-size: 38px; animation: emojiFloat 4s ease-in-out infinite; }.float-suitcase { left: 0; bottom: 6px; }.float-camera { right: 6%; top: -12px; animation-delay: -1s; }.float-sparkle { left: 47%; top: 1%; animation-delay: -2s; }
+.entry-content h2 { color: #284747; }.entry-eyebrow, .welcome-kicker { color: #e47461; }.entry-lede { color: #667e79; }
+.entry-content .field, .field, .composer textarea, .comment-link-input { border: 1.5px solid #e4d8c4; border-radius: 14px; background: #fffefa; }
+.entry-content .field:focus, .field:focus, .composer textarea:focus { border-color: #e98269; box-shadow: 0 0 0 3px rgba(244,154,103,.16); }
+.auth-switch { background: #fff1d7; border: 1px solid #f2dcb8; border-radius: 15px; }.auth-switch button.active { color: #a9563c; border-radius: 11px; }
+.home-project-card, .home-create-card, .home-empty { border-width: 2px; border-radius: 20px; }
+.home-project-card { border-color: #e8e0d1; box-shadow: 0 7px 0 rgba(73,125,110,.08); }
+.home-project-card:nth-child(3n+1) { background: #f0fbf4; }.home-project-card:nth-child(3n+2) { background: #fff5ec; }.home-project-card:nth-child(3n) { background: #f5f0ff; }
+.home-create-card { border-color: #f3b889; background: #fff0d8; box-shadow: 0 7px 0 #f4d3a8; }
+.home-project-card:hover, .home-create-card:hover { box-shadow: 0 11px 0 rgba(73,125,110,.12); }
+.home-project-icon { width: 51px; height: 51px; border-radius: 17px; background: #e0f5ea; color: #345d56; font-size: 25px; animation: emojiFloat 4s ease-in-out infinite; }
+.home-create-card .home-project-icon { background: #fff9ed; font-size: 26px; }.home-invite .home-project-icon { background: #fff7d3; }
+.entry-user-avatar, .account-button { background: #d8f4e9; }
+
+/* Shared workspace: emoji stickers, bright controls, readable content */
+.sidebar, .discussion-pane { background: #fffefa; border-color: #e9e0d0; }
+.brand-row { background: linear-gradient(115deg,#fff8e5,#eefbf3); border-bottom: 2px solid #f1e7d3; }
+.brand-mark { width: 42px; height: 42px; font-size: 25px; }
+.brand-copy strong { color: #31504e; font-size: 17px; }
+.trip-summary { border: 2px solid #cde8d7; border-radius: 20px; background: linear-gradient(135deg,#e9faef,#fff6d9); box-shadow: 0 5px 0 rgba(43,116,94,.08); }
+.trip-summary:after { content: '🧳'; right: -6px; bottom: -25px; color: inherit; font-size: 76px; opacity: .33; transform: rotate(-17deg); }
+.trip-summary h1 { color: #315047; }
+.members-block { background: #fffdf7; }
+.avatar.online:after { box-shadow: 0 0 0 3px #b9f3c6; animation: emojiTwinkle 2s ease-in-out infinite; }
+.trip-nav button { border: 2px solid #e8e0d2; border-radius: 14px; background: #fffdf5; color: #486b65; font-size: 12px; }
+.trip-nav button:hover, .trip-nav button.active { background: #dff7ee; border-color: #9cddc9; }
+.view-switch { border: 1px solid #efe1c8; border-radius: 15px; background: #fff1db; padding: 4px; }
+.view-switch button { border-radius: 12px; }.view-switch button.active { background: #fffefa; color: #b05945; box-shadow: 0 3px 0 rgba(216,159,97,.16); }
+.filter-chip { border-radius: 99px; border-color: #e5dbc9; background: #fffefa; }.filter-chip.active { background: #e6f7ef; border-color: #9fd8c0; }
+.search-box { border: 1.5px solid #e9ddca; border-radius: 13px; background: #fffefa; }.search-box span { font-size: 18px; }
+.place-card { border: 1.5px solid #e9e0d2; border-radius: 17px; box-shadow: 0 3px 0 rgba(63,104,90,.06); }
+.place-card:hover { border-color: #f3b284; box-shadow: 0 6px 0 rgba(238,158,108,.16); }
+.category-icon { width: 39px; height: 39px; border-radius: 13px; font-size: 22px; animation: emojiFloat 4.5s ease-in-out infinite; }
+.place-card:nth-child(2n) .category-icon { animation-delay: -1.8s; }
+.status-dot { border-radius: 99px; }.category-intro { border-radius: 14px; }
+.primary-button, .send-button, .map-add-button, .export-trip-button { background: #159184; border: 2px solid #0e786e; border-radius: 14px; box-shadow: 0 5px 0 #a8d9cd; }
+.primary-button:hover, .send-button:hover, .map-add-button:hover, .export-trip-button:hover { background: #10a192; box-shadow: 0 7px 0 #a8d9cd; }
+.secondary-button, .ghost-button, .panel-toggle, .home-button { border: 1.5px solid #e9ddca; border-radius: 13px; background: #fffefa; box-shadow: 0 4px 0 rgba(78,102,87,.1); }
+.map-title, .map-day-bar, .map-bottom-hint { border: 1.5px solid #f1dcba; border-radius: 15px; background: rgba(255,253,242,.97); box-shadow: 0 5px 0 rgba(95,117,87,.12); }
+.map-title-icon { font-size: 18px; }.day-tabs button { border-radius: 10px; }.day-tabs button.active { background: #ffe7ca; color: #99513f; }
+.map-add-button { width: 54px; height: 54px; border-radius: 18px; font-size: 25px; animation: emojiFloat 3.2s ease-in-out infinite; }
+.route-preview, .modal, .schedule-page { border: 2px solid #f2dfc1; border-radius: 23px; box-shadow: 0 20px 0 rgba(64,98,85,.08),var(--shadow); }
+.modal-root { background: rgba(40,68,66,.37); backdrop-filter: blur(5px); }
+.modal-head h2:before { content: '✨ '; }.modal-head button, .schedule-close, .detail-pane-bar button { border-radius: 11px; background: #fff0db; }
+.quick-category span { border-width: 2px; border-radius: 14px; }.quick-category input:checked+span { background: #fff0db; border-color: #eea776; color: #8d533e; box-shadow: 0 4px 0 #f7d4b5; }
+.location-results button { border-radius: 12px; }.location-results button:hover { background: #fff2db; border-color: #f1b482; }
+.location-selection { border-radius: 11px; background: #e6f8ed; }
+.discussion-header { background: linear-gradient(110deg,#fff9e9,#effbf5); }.discussion-header h2:before { content: '💬 '; }
+.detail-pane-bar { background: #fff6e7; }.detail-tab,.detail-tab-group { border-radius: 13px 13px 0 0; }.detail-tab.active,.detail-tab-group.active { background: #fffefa; border-color: #e9cda8; }
+.message-bubble { border-radius: 7px 17px 17px 17px; background: #f4f7ee; }.message-row.mine .message-bubble { background: #daf6e9; border-radius: 17px 7px 17px 17px; }
+.composer { background: #fffaf0; }.send-button { padding: 8px 15px; }
+.unread-badge { background: #ff675e; animation: emojiTwinkle 2.5s ease-in-out infinite; }
+.schedule-page { background: #fffaf0; }.schedule-page-head { background: linear-gradient(100deg,#fff4dc,#e9f9ef); }.schedule-section { border-radius: 18px; overflow: hidden; }
+.schedule-section-head { background: #fff7e7; }.schedule-stop .place-card { box-shadow: none; }
+.pin-body, .pin-compact, .pin-cluster { box-shadow: 0 5px 0 rgba(48,77,68,.2),0 11px 20px rgba(50,71,61,.18); }
+.pin-body { border-width: 3px; border-radius: 99px; background: #fffef8; }
+.pin-icon { width: 31px; height: 31px; font-size: 19px; }
+.pin-compact span, .pin-cluster b { display: inline-block; animation: emojiFloat 3.8s ease-in-out infinite; }
+.pin-body.selected, .pin-compact.selected { animation: emojiSelected 1.8s ease-in-out infinite; }
+.pin-body.pending:not(.selected), .pin-compact.pending:not(.selected), .pin-cluster.pending { opacity: .58; }
+@keyframes emojiSelected { 0%,100% { filter: drop-shadow(0 0 0 rgba(255,143,85,0)); } 50% { filter: drop-shadow(0 0 10px rgba(255,143,85,.9)); } }
+
+@media (min-width: 901px) and (max-width: 1300px) {
+  .map-topbar { left: 10px; right: 10px; gap: 5px; }
+  .map-topbar .map-title { display: none; }
+  .map-topbar .home-button span { display: none; }
+  .map-topbar .map-actions { gap: 5px; }
+  .map-topbar .ghost-button { padding: 8px; }
+  #shareButton { width: 36px; font-size: 0; }
+  #shareButton::before { content: '💌'; font-size: 15px; }
+  #mapPoiButton { width: 36px; font-size: 0; }
+  #mapPoiButton::before { content: '🔎'; font-size: 15px; }
+  .map-day-bar { left: 10px; max-width: calc(100% - 20px); }
+  .day-route-caption { display: none; }
+}
+@media (max-width: 900px) {
+  .splash-copy { width: calc(100% - 50px); }
+  .splash-car { bottom: 13%; }
+  .welcome-left { background: linear-gradient(130deg,#d9f8ed,#fff0cf); }
+  .welcome-floating, .welcome-map-card, .welcome-note { display: none; }
+  .mobile-nav { background: #fff9ea; border-top: 2px solid #f2ddbc; box-shadow: 0 -6px 22px rgba(66,89,73,.1); }
+  .mobile-nav button.active { color: #df6e54; }
+}
+@media (max-width: 500px) {
+  .splash-copy { margin-top: 14vh; }.splash-copy h1 { font-size: 42px; }.splash-copy p { max-width: 300px; font-size: 13px; }
+  .splash-stickers { max-width: 290px; gap: 6px; }.splash-stickers span { padding: 6px 9px; font-size: 10px; }
+  .deco-sun { right: 3%; top: 4%; font-size: 70px; }.deco-plane { top: 28%; right: 6%; }.deco-pin { right: 4%; bottom: 27%; }
+  .splash-car { width: 290px; height: 180px; bottom: 13%; }.splash-vehicle { font-size: 210px; }.splash-car-window span { font-size: 37px; }
+  .road-stop { font-size: 30px; top: -40px; }
+  .welcome-brand span { width: 35px; height: 35px; font-size: 21px; }
+  .map-title { max-width: 43%; }.map-title-icon { display: none; }
+  .schedule-page { border: 0; border-radius: 0; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .splash-car { animation: none !important; transform: translateX(18vw) !important; }
+}
+
+/* 小黄豆表情是主角；工作区回到清楚的平面层级。 */
+:root { --shadow: 0 14px 32px rgba(36, 60, 52, .12); }
+button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
+.splash-screen { background: #fff6d5; }
+.splash-sky { background: linear-gradient(180deg, #f4ffe9 0%, #fff8db 67%, #ffefce 100%); }
+.splash-deco { filter: none; }
+.deco-plane { top: 23%; right: 30%; font-size: clamp(53px, 7vw, 90px); animation: emojiFloat 4s ease-in-out infinite; }
+.deco-pin { right: 10%; bottom: 26%; font-size: clamp(54px, 7vw, 90px); animation: emojiWiggle 3s ease-in-out infinite; }
+.deco-sparkle { left: 48%; top: 11%; font-size: 53px; }
+.splash-copy h1 span { margin-left: .1em; }
+.splash-kicker { border-color: #f2cc76; box-shadow: none; background: #fff9ea; }
+.splash-stickers span { animation: none; box-shadow: none; border: 1px solid #e6d8ba; }
+.splash-stickers span:nth-child(1) { background: #fff2d4; }
+.splash-stickers span:nth-child(2) { background: #f0faec; }
+.splash-stickers span:nth-child(3) { background: #f8efff; }
+.splash-enter { display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 27px; padding: 14px 25px; min-width: 190px; border: 2px solid #233f3d; border-radius: 15px; background: #ffd45d; color: #273d39; font-size: 16px; font-weight: 700; box-shadow: none; cursor: pointer; }
+.splash-enter:hover { background: #ffe181; }
+.splash-enter span { font-size: 21px; line-height: 1; }
+.splash-enter-hint { margin-top: 9px; color: #6f796b; font-size: 11px; font-weight: 600; }
+.splash-car { animation: emojiRideAndPark 3.4s cubic-bezier(.3,.08,.2,1) forwards; }
+.splash-car-window span { animation: emojiBob .6s ease-in-out infinite alternate; }
+.splash-luggage { animation: none; }.splash-dust { animation: emojiDust .9s ease-in-out infinite alternate; }
+.road-stop { animation: none; }
+@keyframes emojiRideAndPark { 0% { transform: translateX(-140%) rotate(-5deg); } 58% { transform: translateX(49vw) rotate(2deg); } 78% { transform: translateX(41vw) rotate(-1deg); } 100% { transform: translateX(43vw) rotate(0); } }
+
+.welcome-left { background: #fff3d5; border-right: 2px solid #e9dfc8; }
+.welcome-brand span, .brand-mark { animation: none; box-shadow: none; border: 1px solid #e7cd83; background: #ffebaa; }
+.welcome-map-card { transform: rotate(-3deg); box-shadow: none; border: 3px solid #e4e7cc; }
+.welcome-orbit, .welcome-floating { display: none; }
+.welcome-pin { animation: none; box-shadow: none; background: #fff9e5; border: 2px solid #f2dcaa; }
+.welcome-pin.pin-b { animation: emojiWiggle 4s ease-in-out infinite; }
+.welcome-note { box-shadow: none; transform: rotate(2deg); }
+.welcome-right { background: #fffefa; }
+.auth-switch, .home-create-card, .home-project-card, .home-empty { box-shadow: none; }
+.home-create-card { border-style: solid; border-color: #e8c46c; background: #fff2c9; }
+.home-project-card { border-color: #e7e3d8; background: #fffefa !important; }
+.home-project-card:hover, .home-create-card:hover { transform: none; box-shadow: none; border-color: #ddae54; background: #fff8df; }
+.home-project-icon { animation: none; background: #fff0b8; }
+.home-create-card .home-project-icon { background: #ffe080; }
+.home-project-main strong { color: #304745; }
+
+.sidebar, .discussion-pane { box-shadow: none; }
+.brand-row { background: #fff9e9; }
+.trip-summary { border-radius: 15px; border-color: #e0e8cc; box-shadow: none; background: #f3f8e9; }
+.trip-summary:after { content: '🧳'; right: 0; bottom: -16px; font-size: 66px; opacity: .3; }
+.trip-nav button, .view-switch, .search-box, .filter-chip, .place-card { box-shadow: none; }
+.trip-nav button { border-width: 1px; border-radius: 10px; }
+.view-switch { background: #fff2cf; border-radius: 11px; }
+.view-switch button.active { box-shadow: none; background: #fffefa; }
+.place-card { border-radius: 11px; border-width: 1px; }
+.place-card:hover { transform: none; box-shadow: none; border-color: #d7ad67; background: #fffdf3; }
+.category-icon, .map-add-button, .pin-compact span, .pin-cluster b { animation: none; }
+.primary-button, .send-button, .map-add-button, .export-trip-button { box-shadow: none; border-width: 1px; border-radius: 10px; }
+.primary-button:hover, .send-button:hover, .map-add-button:hover, .export-trip-button:hover { box-shadow: none; }
+.secondary-button, .ghost-button, .panel-toggle, .home-button { box-shadow: none; border-width: 1px; border-radius: 10px; }
+.map-title, .map-day-bar, .map-bottom-hint { box-shadow: 0 2px 8px rgba(51,72,60,.1); border-width: 1px; border-radius: 10px; }
+.route-preview, .modal, .schedule-page { box-shadow: var(--shadow); border-width: 1px; border-radius: 16px; }
+.quick-category input:checked+span { box-shadow: none; }
+.discussion-header { background: #fff9e9; }.discussion-header h2:before { content: '💬 '; }
+.detail-pane-bar { background: #fff9e9; }
+.composer { background: #fffefa; }
+.schedule-page { background: #fffefa; }.schedule-page-head { background: #fff4d6; }
+.pin-body, .pin-compact, .pin-cluster { box-shadow: 0 3px 10px rgba(37,58,48,.2); }
+.pin-body.selected, .pin-compact.selected { animation: emojiSelected 1.8s ease-in-out infinite; }
+.chat-intro:before { content: '😄 '; }
+
+@media (max-width: 900px) {
+  .welcome-left { border-right: 0; border-bottom: 2px solid #e9dfc8; background: #fff3d5; }
+  .mobile-nav { box-shadow: none; }
+}
+@media (max-width: 500px) {
+  .splash-enter { margin-top: 18px; padding: 11px 18px; min-width: 160px; font-size: 13px; }
+  .splash-enter-hint { font-size: 10px; }
+  .splash-car { animation-name: emojiRideAndParkMobile; }
+  .deco-plane { right: 9%; top: 34%; }.deco-pin { right: 3%; bottom: 26%; }
+  .welcome-map-card { display: none; }
+  .schedule-page { border-radius: 0; box-shadow: none; }
+}
+@keyframes emojiRideAndParkMobile { 0% { transform: translateX(-140%) rotate(-4deg); } 58% { transform: translateX(21vw) rotate(2deg); } 100% { transform: translateX(16vw) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .splash-car { animation: none !important; transform: translateX(18vw) !important; } .welcome-pin.pin-b { animation: none; } }
