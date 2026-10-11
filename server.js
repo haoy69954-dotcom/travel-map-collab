@@ -640,6 +640,7 @@ const server = http.createServer(async (req, res) => {
       const origin = new URL(req.headers.origin);
       if (origin.host !== req.headers.host || !['http:', 'https:'].includes(origin.protocol)) return fail(res, 403, '请求来源无效');
     }
+    if (url.pathname === '/healthz' && req.method === 'GET') return send(res, 200, { ok: true });
     if (url.pathname.startsWith('/_AMapService/')) return await proxyAmap(req, res, url);
     if (req.method === 'GET' && /^\/uploads\/[0-9a-f-]{36}\.(jpg|png|webp)$/.test(url.pathname)) {
       const file = path.join(dataDir, url.pathname.slice(1));
