@@ -167,6 +167,7 @@ function isPlatformArtwork(value) { try { const url = new URL(value); return url
 function safeImage(value) { return /^\/uploads\/[0-9a-f-]{36}\.(jpg|png|webp)$/.test(value || '') ? value : isPlatformArtwork(value) ? '' : safeUrl(value); }
 function needsSourcePhotoRefresh(p) {
   if (sourceSite(p.sourceUrl) !== '小红书' || /^\/uploads\//.test(p.coverImage || '')) return false;
+  if (/^\/uploads\//.test(p.sourceImage || '')) return false;
   if (safeImage(p.coverImage) && p.coverImage !== p.sourceImage) return false;
   if (!safeImage(p.sourceImage)) return true;
   try {
@@ -182,7 +183,7 @@ function sourceSite(value) { try { const host = new URL(value).hostname; return 
 function sourceLink(value) { return (String(value || '').match(/https?:\/\/[^\s<>"']+/i)?.[0] || '').replace(/[，。！）】\])]+$/, ''); }
 function photoMarkup(p, size = 'small') {
   const image = safeImage(p.coverImage) || safeImage(p.sourceImage);
-  return `<div class="place-photo ${size} kind-${placeKind(p)}"><span class="photo-symbol">${categories[p.category] || '📍'}</span>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}的图片" loading="lazy" ${p.id ? `data-place-photo="${escapeHtml(p.id)}"` : ''} onerror="this.remove()">` : ''}</div>`;
+  return `<div class="place-photo ${size} kind-${placeKind(p)}"><span class="photo-symbol">${categories[p.category] || '📍'}</span>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}的图片" loading="lazy" ${p.id ? `data-place-photo="${escapeHtml(p.id)}"` : ''} onerror="this.parentElement.classList.add('photo-failed');this.remove()">` : ''}${size === 'hero' && image ? `<span class="photo-failure-note">${sourceSite(p.sourceUrl) === '小红书' ? '帖子图片加载失败，可重试读取或上传照片。' : '照片暂时无法显示，可上传新照片。'}</span>` : ''}</div>`;
 }
 function sourcePreviewMarkup(data) {
   const url = safeUrl(data.sourceUrl || data.url), image = safeImage(data.sourceImage || data.image);
@@ -861,7 +862,7 @@ function renderPlace() {
   return `<div class="discussion-header"><div class="discussion-eyebrow">PLACE DISCUSSION</div><h2>${p.category === '酒店' ? '酒店详情' : '地点详情'}</h2><p>在这里一起决定要不要去、什么时候去</p></div>
     <div class="place-detail-scroll">
       <div class="detail-main">
-        <div class="hero-photo-wrap">${photoMarkup(p, 'hero')}<button type="button" class="hero-cover-button" data-pick-cover>${hasPhoto ? '更换封面照片' : '上传封面照片'}</button><input type="file" accept="image/jpeg,image/png,image/webp" data-detail-cover-upload data-place-id="${p.id}" hidden></div>
+        <div class="hero-photo-wrap">${photoMarkup(p, 'hero')}${source && sourceSite(source) === '小红书' ? `<button type="button" class="hero-retry-button${hasPhoto ? ' only-on-failure' : ''}" data-retry-cover>重试读取帖子图片</button>` : ''}<button type="button" class="hero-cover-button" data-pick-cover>${hasPhoto ? '上传新照片' : '上传封面照片'}</button><input type="file" accept="image/jpeg,image/png,image/webp" data-detail-cover-upload data-place-id="${p.id}" hidden></div>
         ${missingPostCover ? '<p class="cover-help">这篇笔记只返回了小红书平台图。上传真实照片后，这里和地图列表都会显示它。</p>' : ''}
         <div class="detail-topline"><span class="detail-category">${categories[p.category] || '📍'} ${escapeHtml(p.category)}</span><span class="status-dot ${p.dayIndex || assignedHotelDays(p).length ? 'scheduled' : 'pending'}">${planningLabel(p)}</span></div>
         <h2>${escapeHtml(p.name)}</h2>
@@ -1289,13 +1290,15 @@ async function refreshTrip() {
   if (state.selectedPlaceId && !selectedPlace()) { state.selectedPlaceId = ''; state.rightMode = 'group'; }
   renderAll();
 }
-async function refreshPlacePhoto(p) {
-  if (!state.memberId || !p?.id || Date.now() - (state.photoRefreshAttempted.get(p.id) || 0) < 60_000) return;
+async function refreshPlacePhoto(p, manual = false) {
+  if (!state.memberId || !p?.id) return;
+  if (!manual && Date.now() - (state.photoRefreshAttempted.get(p.id) || 0) < 60_000) return;
   state.photoRefreshAttempted.set(p.id, Date.now());
   try {
     const result = await api(`/api/trips/${encodeURIComponent(state.tripId)}/actions`, { method: 'POST', body: JSON.stringify({ action: 'refresh-source-photo', placeId: p.id }) });
-    if (result.updated) await refreshTrip();
-  } catch { /* The source can temporarily block access; keep the existing place. */ }
+    if (result.updated) { await refreshTrip(); if (manual) toast('已重新读取帖子图片'); }
+    else if (manual) toast('原帖暂时无法提供图片，可上传一张照片作为封面');
+  } catch { if (manual) toast('图片暂时无法读取，请稍后重试或上传照片'); }
 }
 async function refreshCommentPhoto(p, comment) {
   if (!state.memberId || !comment?.id || Date.now() - (state.commentPhotoRefreshAttempted.get(comment.id) || 0) < 60_000) return;
@@ -1367,7 +1370,7 @@ document.addEventListener('error', event => {
   const placeId = event.target?.dataset?.placePhoto;
   if (!placeId) return;
   const p = state.trip?.places.find(item => item.id === placeId);
-  if (p && sourceSite(p.sourceUrl) === '小红书' && !/^\/uploads\//.test(p.coverImage || '')) refreshPlacePhoto(p);
+  if (p && sourceSite(p.sourceUrl) === '小红书' && (!/^\/uploads\//.test(p.coverImage || '') || p.coverImage === p.sourceImage)) refreshPlacePhoto(p);
 }, true);
 
 document.addEventListener('click', event => {
@@ -1411,6 +1414,7 @@ document.addEventListener('click', event => {
   const detailTab = event.target.closest('[data-detail-tab]'); if (detailTab) { selectPlace(detailTab.dataset.detailTab); return; }
   if (event.target.closest('[data-detail-group]')) { state.rightMode = 'group'; state.selectedPlaceId = ''; state.rightCollapsed = false; syncPanelLayout(); renderDiscussion(); updateMarkerSelection(); return; }
   if (event.target.closest('[data-pick-cover]')) { event.target.closest('.hero-photo-wrap')?.querySelector('[data-detail-cover-upload]')?.click(); return; }
+  if (event.target.closest('[data-retry-cover]')) { const p = selectedPlace(); if (p) refreshPlacePhoto(p, true); return; }
   const locationSearch = event.target.closest('[data-search-location]'); if (locationSearch) return searchAddLocation(locationSearch.closest('form').querySelector('[data-add-location-search]'));
   const locationResult = event.target.closest('[data-select-add-poi]'); if (locationResult) return selectAddLocation(Number(locationResult.dataset.selectAddPoi));
   const tripOriginSearch = event.target.closest('[data-search-trip-origin]'); if (tripOriginSearch) return searchTripOrigin(tripOriginSearch.closest('form').querySelector('[data-trip-origin-search]'));

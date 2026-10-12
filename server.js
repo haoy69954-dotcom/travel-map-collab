@@ -277,6 +277,52 @@ function isPrivateAddress(address) {
   const a = address.toLowerCase();
   return a === '::1' || a.startsWith('fc') || a.startsWith('fd') || a.startsWith('fe80:') || a.startsWith('127.') || a.startsWith('10.') || a.startsWith('192.168.') || a.startsWith('169.254.') || a === '0.0.0.0' || /^172\.(1[6-9]|2\d|3[01])\./.test(a);
 }
+function linkedImageHost(hostname, site) {
+  const host = hostname.toLowerCase();
+  return site === '小红书' ? (host === 'xhscdn.com' || host.endsWith('.xhscdn.com'))
+    : site === '大众点评' ? (host === 'dpfile.com' || host.endsWith('.dpfile.com') || host === 'meituan.net' || host.endsWith('.meituan.net'))
+      : false;
+}
+function imageExtension(bytes) {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpg';
+  if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'png';
+  if (bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') return 'webp';
+  return '';
+}
+async function cacheLinkedImage(imageUrl, sourceUrl, site) {
+  if (!imageUrl || !linkedImageHost(new URL(imageUrl).hostname, site)) return '';
+  const digest = crypto.createHash('sha256').update(sourceUrl).digest('hex').slice(0, 32);
+  const name = `${digest.slice(0, 8)}-${digest.slice(8, 12)}-${digest.slice(12, 16)}-${digest.slice(16, 20)}-${digest.slice(20)}`;
+  const folder = path.join(dataDir, 'uploads');
+  for (const ext of ['jpg', 'png', 'webp']) if (fs.existsSync(path.join(folder, `${name}.${ext}`))) return `/uploads/${name}.${ext}`;
+  let current = imageUrl;
+  for (let redirect = 0; redirect < 4; redirect++) {
+    const url = new URL(current);
+    if (url.protocol !== 'https:' || !linkedImageHost(url.hostname, site)) return '';
+    const addresses = await lookup(url.hostname, { all: true });
+    if (!addresses.length || addresses.some(entry => isPrivateAddress(entry.address))) return '';
+    const response = await fetch(current, {
+      redirect: 'manual', signal: AbortSignal.timeout(7000),
+      headers: { accept: 'image/avif,image/webp,image/apng,image/*;q=0.8', referer: site === '小红书' ? 'https://www.xiaohongshu.com/' : 'https://www.dianping.com/', 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1' }
+    });
+    if ([301, 302, 303, 307, 308].includes(response.status)) { current = new URL(response.headers.get('location') || '', current).href; continue; }
+    if (!response.ok || Number(response.headers.get('content-length') || 0) > 3_000_000) return '';
+    const chunks = []; let size = 0;
+    for await (const chunk of response.body) {
+      size += chunk.length;
+      if (size > 3_000_000) return '';
+      chunks.push(chunk);
+    }
+    const bytes = Buffer.concat(chunks), ext = imageExtension(bytes);
+    if (!ext) return '';
+    fs.mkdirSync(folder, { recursive: true });
+    const file = path.join(folder, `${name}.${ext}`), temp = `${file}.${id()}.tmp`;
+    fs.writeFileSync(temp, bytes);
+    fs.renameSync(temp, file);
+    return `/uploads/${name}.${ext}`;
+  }
+  return '';
+}
 async function fetchSourcePreview(value) {
   let current = publicUrl(value);
   if (!current || !sourceSite(new URL(current).hostname)) throw new Error('请粘贴小红书或大众点评链接');
@@ -302,7 +348,8 @@ async function fetchSourcePreview(value) {
     const title = /^小红书(?:\s*[-|｜]\s*你的生活兴趣社区)?\s*$/i.test(rawTitle) ? '' : trimmed(rawTitle.replace(/\s*[-|｜]\s*(小红书|大众点评).*$/i, ''), 100);
     const description = trimmed(metaValue(html, ['og:description', 'twitter:description', 'description']), 600);
     const imageCandidates = [site === '小红书' ? xhsPostImage(html, current) : '', metaValue(html, ['og:image']), metaValue(html, ['twitter:image']), ...[structured.image].flat().map(item => typeof item === 'string' ? item : item?.url || item?.contentUrl || '')];
-    const image = imageCandidates.filter(Boolean).map(value => { try { return publicUrl(new URL(value, current).href); } catch { return ''; } }).find(value => value && !isPlatformArtwork(value, sourceSite(url.hostname))) || '';
+    const remoteImage = imageCandidates.filter(Boolean).map(value => { try { return publicUrl(new URL(value, current).href); } catch { return ''; } }).find(value => value && !isPlatformArtwork(value, sourceSite(url.hostname))) || '';
+    const image = remoteImage ? await cacheLinkedImage(remoteImage, current, site).catch(() => '') || remoteImage : '';
     const address = structured.address || {};
     const addressText = typeof address === 'string' ? address : [address.streetAddress, address.addressLocality, address.addressRegion].filter(Boolean).join(' · ');
     const hours = typeof structured.openingHours === 'string' ? structured.openingHours : '';
@@ -333,7 +380,7 @@ function coverValue(value) {
   return publicUrl(cover);
 }
 function sourceFields(input) {
-  return { coverImage: coverValue(input.coverImage), sourceImage: publicUrl(trimmed(input.sourceImage, 800)), sourceTitle: trimmed(input.sourceTitle, 100), sourceDescription: trimmed(input.sourceDescription, 600), sourceSite: trimmed(input.sourceSite, 20) };
+  return { coverImage: coverValue(input.coverImage), sourceImage: coverValue(input.sourceImage), sourceTitle: trimmed(input.sourceTitle, 100), sourceDescription: trimmed(input.sourceDescription, 600), sourceSite: trimmed(input.sourceSite, 20) };
 }
 function place(trip, placeId) { return trip.places.find(p => p.id === placeId); }
 function record(trip, actorId, text) {
@@ -383,6 +430,8 @@ async function handleApi(req, res, url) {
   const trip = state.trips[tripId];
   if (!trip) return fail(res, 404, '找不到这趟旅行');
   if (parts[3] === 'link-preview' && req.method === 'GET') {
+    const user = authRequired(req, res); if (!user) return;
+    if (!memberForUser(trip, user)) return fail(res, 403, '请先加入旅行');
     try { return send(res, 200, await fetchSourcePreview(url.searchParams.get('url') || '')); }
     catch (error) { return fail(res, 422, error.message || '无法读取链接资料'); }
   }
@@ -516,7 +565,7 @@ async function handleApi(req, res, url) {
       const source = publicUrl(comment?.sourceUrl);
       if (!source || sourceSite(new URL(source).hostname) !== '小红书') return fail(res, 400, '评论没有小红书帖子');
       const preview = await fetchSourcePreview(source);
-      if (!preview.image || !/(^|\.)xhscdn\.com$/.test(new URL(preview.image).hostname)) return send(res, 200, { updated: false });
+      if (!preview.image.startsWith('/uploads/')) return send(res, 200, { updated: false });
       comment.sourceImage = preview.image;
       if (!comment.sourceTitle && preview.title) comment.sourceTitle = preview.title;
       if (!comment.sourceDescription && preview.description) comment.sourceDescription = preview.description;
@@ -527,7 +576,7 @@ async function handleApi(req, res, url) {
       const source = publicUrl(p.sourceUrl);
       if (!source || sourceSite(new URL(source).hostname) !== '小红书') return fail(res, 400, '地点没有小红书来源');
       const preview = await fetchSourcePreview(source);
-      if (!preview.image || !/(^|\.)xhscdn\.com$/.test(new URL(preview.image).hostname)) return send(res, 200, { updated: false });
+      if (!preview.image.startsWith('/uploads/')) return send(res, 200, { updated: false });
       const oldSourceImage = p.sourceImage;
       p.sourceImage = preview.image;
       if (!p.coverImage || p.coverImage === oldSourceImage || isPlatformArtwork(p.coverImage, '小红书')) p.coverImage = preview.image;
@@ -549,7 +598,7 @@ async function handleApi(req, res, url) {
       if (!text && !sourceUrl) return fail(res, 400, '写一点想法或添加一篇帖子');
       if (sourceUrl && !sourceSite(new URL(sourceUrl).hostname)) return fail(res, 400, '帖子链接仅支持小红书或大众点评');
       if (input.sourceUrl && !sourceUrl) return fail(res, 400, '帖子链接无效');
-      p.comments.push({ id: id(), authorId: actor.id, text, createdAt: now(), sourceUrl, sourceTitle: sourceUrl ? trimmed(input.sourceTitle, 100) : '', sourceDescription: sourceUrl ? trimmed(input.sourceDescription, 600) : '', sourceImage: sourceUrl ? publicUrl(trimmed(input.sourceImage, 800)) : '', sourceSite: sourceUrl ? sourceSite(new URL(sourceUrl).hostname) : '' });
+      p.comments.push({ id: id(), authorId: actor.id, text, createdAt: now(), sourceUrl, sourceTitle: sourceUrl ? trimmed(input.sourceTitle, 100) : '', sourceDescription: sourceUrl ? trimmed(input.sourceDescription, 600) : '', sourceImage: sourceUrl ? coverValue(input.sourceImage) : '', sourceSite: sourceUrl ? sourceSite(new URL(sourceUrl).hostname) : '' });
       changed(trip);
       return send(res, 201, { ok: true });
     }
