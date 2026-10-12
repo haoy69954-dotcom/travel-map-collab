@@ -474,6 +474,16 @@ async function handleApi(req, res, url) {
     if (!actor) return fail(res, 403, '请先加入旅行');
     const action = input.action;
     const p = place(trip, input.placeId);
+    if (action === 'rename-trip') {
+      const title = typeof input.title === 'string' ? input.title.trim() : '';
+      if (!title || title.length > 80) return fail(res, 400, '旅行名称需要填写，最多 80 个字');
+      if (title !== trip.title) {
+        trip.title = title;
+        record(trip, actor.id, `将旅行名称改为「${title}」`);
+        changed(trip);
+      }
+      return send(res, 200, { ok: true, title: trip.title });
+    }
     if (action === 'update-trip-dates') {
       const startDate = trimmed(input.startDate, 10), endDate = trimmed(input.endDate, 10);
       const dayCount = dayNumber(endDate) - dayNumber(startDate) + 1;

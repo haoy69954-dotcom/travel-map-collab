@@ -364,7 +364,7 @@ async function showHome() {
     const invitedId = state.tripId && !trips.some(trip => trip.id === state.tripId) ? state.tripId : '';
     let invite = null;
     if (invitedId) try { invite = (await api(`/api/trips/${encodeURIComponent(invitedId)}`)).trip; } catch { /* 邀请链接可能已失效。 */ }
-    const cards = trips.map(trip => `<button type="button" class="home-project-card" data-open-trip="${escapeHtml(trip.id)}"><span class="home-project-icon">🗺️</span><span class="home-project-main"><strong>${escapeHtml(trip.title)}</strong><small>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天${trip.startDate ? ` · ${escapeHtml(trip.startDate)}` : ''}</small></span><span class="home-project-arrow">↗</span></button>`).join('');
+    const cards = trips.map(trip => `<div class="home-project-row"><button type="button" class="home-project-card" data-open-trip="${escapeHtml(trip.id)}"><span class="home-project-icon">🗺️</span><span class="home-project-main"><strong>${escapeHtml(trip.title)}</strong><small>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天${trip.startDate ? ` · ${escapeHtml(trip.startDate)}` : ''}</small></span><span class="home-project-arrow">↗</span></button><button type="button" class="home-project-rename" data-edit-trip-title="${escapeHtml(trip.id)}" data-trip-title="${escapeHtml(trip.title)}" aria-label="修改${escapeHtml(trip.title)}的名称" title="修改名称">✏️</button></div>`).join('');
     content.innerHTML = `<div class="entry-home-top"><div class="entry-eyebrow">YOUR TRAVEL SPACE</div><button type="button" class="entry-user" data-home-account><span class="entry-user-avatar">${escapeHtml(state.user.name.slice(0, 1))}</span>${escapeHtml(state.user.name)}</button></div><h2>下一趟，去哪里？</h2><p class="entry-lede">从一个想法开始，邀请伙伴一起把行程聊出来。</p><button type="button" class="home-create-card" data-start-new-trip><span class="home-project-icon">🧳</span><span class="home-project-main"><strong>创建新旅行</strong><small>定下日期和目的地，开始一张共享地图</small></span><span class="home-project-arrow">↗</span></button>${invite ? `<div class="home-section-title">收到的邀请</div><button type="button" class="home-project-card home-invite" data-open-trip="${escapeHtml(invite.id)}"><span class="home-project-icon">✉️</span><span class="home-project-main"><strong>${escapeHtml(invite.title)}</strong><small>${escapeHtml(invite.destination || '一起决定目的地')} · ${invite.dayCount} 天 · 点击查看并加入</small></span><span class="home-project-arrow">↗</span></button>` : ''}<div class="home-section-title">我的旅行 · ${trips.length}</div><div class="home-projects">${cards || '<div class="home-empty">还没有旅行项目。点击上方创建，或打开伙伴发来的邀请链接。</div>'}</div>${!trips.length && !invite ? '<div class="home-footer-actions"><button type="button" data-open-trip="demo-kyoto">先看看示例旅行 →</button></div>' : ''}<div class="home-footer-actions"><button type="button" data-home-logout>退出登录</button></div>`;
   } catch (error) { content.innerHTML = `<div class="entry-eyebrow">YOUR TRAVEL SPACE</div><h2>暂时无法读取项目</h2><p class="entry-lede">${escapeHtml(error.message)}</p><button type="button" class="primary-button" data-retry-home>重试</button>`; }
 }
@@ -436,6 +436,11 @@ function showTripDates() {
   const trip = state.trip;
   showModal(`<div class="modal">${modalHeader('旅行日期', '设置开始与结束日期')}<p>日期决定 Day 的数量；每天可以分别选择酒店并规划路线。</p><form id="tripDatesForm"><div class="form-pair"><div><label for="tripStartDate">开始日期</label><input class="field" id="tripStartDate" name="startDate" type="date" value="${escapeHtml(trip.startDate || '')}" required></div><div><label for="tripEndDate">结束日期</label><input class="field" id="tripEndDate" name="endDate" type="date" value="${escapeHtml(trip.endDate || '')}" required></div></div><div class="trip-date-summary" id="tripDateSummary"></div><div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>取消</button><button class="primary-button" type="submit">保存日期</button></div></form></div>`);
   updateTripDateSummary();
+}
+function showTripTitle(tripId, title) {
+  if (!state.user) return showAuth();
+  showModal(`<div class="modal">${modalHeader('旅行项目', '修改项目名称')}<p>新名称会同步显示给这趟旅行的所有伙伴。</p><form id="tripTitleForm"><input type="hidden" name="tripId" value="${escapeHtml(tripId)}"><label for="editTripTitle">项目名称</label><input class="field" id="editTripTitle" name="title" value="${escapeHtml(title)}" maxlength="80" required><div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>取消</button><button class="primary-button" type="submit">保存名称</button></div></form></div>`);
+  const input = $('#editTripTitle'); input.focus(); input.select();
 }
 function updateTripDateSummary() {
   const form = $('#newTripForm') || $('#tripDatesForm'); if (!form) return;
@@ -733,7 +738,7 @@ async function exportTripImage() {
 }
 function renderSummary() {
   const trip = state.trip;
-  $('#tripSummary').innerHTML = `<div class="trip-eyebrow">OUR NEXT JOURNEY</div><h1>${escapeHtml(trip.title)}</h1><div class="trip-destination">📍 ${escapeHtml(trip.destination || '一起决定目的地')} · ${trip.startDate && trip.endDate ? `${dateText(trip.startDate)}—${dateText(trip.endDate)} · ` : '日期待定 · '}${trip.dayCount || 3} 天</div><button type="button" class="trip-date-button" data-edit-trip-dates>${trip.startDate && trip.endDate ? '调整日期 ↗' : '设置旅行日期 ↗'}</button>`;
+  $('#tripSummary').innerHTML = `<div class="trip-eyebrow">OUR NEXT JOURNEY</div><h1>${escapeHtml(trip.title)}</h1><div class="trip-destination">📍 ${escapeHtml(trip.destination || '一起决定目的地')} · ${trip.startDate && trip.endDate ? `${dateText(trip.startDate)}—${dateText(trip.endDate)} · ` : '日期待定 · '}${trip.dayCount || 3} 天</div><div class="trip-summary-actions"><button type="button" class="trip-date-button" data-edit-trip-title="${escapeHtml(trip.id)}" data-trip-title="${escapeHtml(trip.title)}">✏️ 修改名称</button><button type="button" class="trip-date-button" data-edit-trip-dates>${trip.startDate && trip.endDate ? '调整日期 ↗' : '设置旅行日期 ↗'}</button></div>`;
   $('#mapTitle').textContent = `${trip.title} · 共享地图`;
   $('#placeCount').textContent = trip.places.filter(p => p.status !== 'archived').length;
 }
@@ -1435,6 +1440,7 @@ document.addEventListener('click', event => {
   const routePlatform = event.target.closest('[data-qr-platform]'); if (routePlatform) { state.routePlatform = routePlatform.dataset.qrPlatform; setRouteQr(state.routeSelection || 0); return; }
   const copyRoute = event.target.closest('[data-copy-route]'); if (copyRoute) { navigator.clipboard.writeText(copyRoute.dataset.copyRoute).then(() => toast('高德 App 路线链接已复制')).catch(() => toast('复制失败，请用手机扫描二维码')); return; }
   if (event.target.closest('#newTripButton')) return showNewTrip();
+  const editTripTitle = event.target.closest('[data-edit-trip-title]'); if (editTripTitle) return showTripTitle(editTripTitle.dataset.editTripTitle, editTripTitle.dataset.tripTitle);
   if (event.target.closest('[data-edit-trip-dates]')) return showTripDates();
   if (event.target.closest('#mapInfoButton')) return showMapInfo();
   if (event.target.closest('#mapPoiButton')) { state.addMode = 'inspect'; updateMapHint(); toast('点击地图，查看附近的高德地点'); return; }
@@ -1516,6 +1522,16 @@ document.addEventListener('submit', async event => {
       const data = Object.fromEntries(new FormData(form));
       await action({ action: 'update-trip-dates', startDate: data.startDate, endDate: data.endDate });
       closeModal(); toast(`已设置 ${state.trip.dayCount} 天旅行，行程日期已更新`);
+    } else if (form.id === 'tripTitleForm') {
+      const data = Object.fromEntries(new FormData(form));
+      const title = data.title.trim();
+      if (!title) { toast('请填写项目名称'); form.elements.namedItem('title').focus(); return; }
+      if ($('#entryScreen').hidden && data.tripId === state.tripId && state.trip && state.memberId) await action({ action: 'rename-trip', title });
+      else {
+        await api(`/api/trips/${encodeURIComponent(data.tripId)}/actions`, { method: 'POST', body: JSON.stringify({ action: 'rename-trip', title }) });
+        await showHome();
+      }
+      closeModal(); toast('项目名称已更新，伙伴们也能看到');
     } else if (form.id === 'addPlaceForm') {
       await finishPlaceMedia(form);
       if (!form.elements.namedItem('name').value.trim()) { revealQuickName(form); toast('请补一个地点名称，再放到地图上'); return; }

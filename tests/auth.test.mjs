@@ -39,12 +39,18 @@ test('accounts protect trip writes and keep membership across logins', async () 
     const aliceMember = tripResult.data.trip.members[0];
     assert.equal(aliceMember.userId, alice.data.user.id);
     assert.equal((await request('/api/auth/trips', 'GET', undefined, alice.cookie)).data.trips[0].id, tripId);
+    assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '擅自改名' })).status, 401);
     const bob = await request('/api/auth/register', 'POST', { name: '小林', email: 'bob@example.test', password: 'another long password' });
     assert.equal(bob.status, 201);
     assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { actorId: aliceMember.id, action: 'message', text: '冒名发言' }, bob.cookie)).status, 403);
+    assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '未加入改名' }, bob.cookie)).status, 403);
     const joined = await request(`/api/trips/${tripId}/join`, 'POST', { name: '假名字' }, bob.cookie);
     assert.equal(joined.status, 201);
     assert.equal(joined.data.member.name, '小林');
+    assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '  ' }, bob.cookie)).status, 400);
+    assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '旅伴的上海周末' }, bob.cookie)).status, 200);
+    assert.equal((await request(`/api/trips/${tripId}`)).data.trip.title, '旅伴的上海周末');
+    assert.equal((await request('/api/auth/trips', 'GET', undefined, alice.cookie)).data.trips[0].title, '旅伴的上海周末');
     assert.equal((await request(`/api/trips/${tripId}/join`, 'POST', {}, bob.cookie)).data.member.id, joined.data.member.id);
     const message = await request(`/api/trips/${tripId}/actions`, 'POST', { actorId: aliceMember.id, action: 'message', text: '大家好' }, bob.cookie);
     assert.equal(message.status, 201);
