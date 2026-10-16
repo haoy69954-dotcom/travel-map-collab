@@ -608,7 +608,9 @@ async function handleApi(req, res, url) {
       if (!text && !sourceUrl) return fail(res, 400, '写一点想法或添加一篇帖子');
       if (sourceUrl && !sourceSite(new URL(sourceUrl).hostname)) return fail(res, 400, '帖子链接仅支持小红书或大众点评');
       if (input.sourceUrl && !sourceUrl) return fail(res, 400, '帖子链接无效');
-      p.comments.push({ id: id(), authorId: actor.id, text, createdAt: now(), sourceUrl, sourceTitle: sourceUrl ? trimmed(input.sourceTitle, 100) : '', sourceDescription: sourceUrl ? trimmed(input.sourceDescription, 600) : '', sourceImage: sourceUrl ? coverValue(input.sourceImage) : '', sourceSite: sourceUrl ? sourceSite(new URL(sourceUrl).hostname) : '' });
+      const comment = { id: id(), authorId: actor.id, text, createdAt: now(), sourceUrl, sourceTitle: sourceUrl ? trimmed(input.sourceTitle, 100) : '', sourceDescription: sourceUrl ? trimmed(input.sourceDescription, 600) : '', sourceImage: sourceUrl ? coverValue(input.sourceImage) : '', sourceSite: sourceUrl ? sourceSite(new URL(sourceUrl).hostname) : '' };
+      p.comments.push(comment);
+      trip.messages.push({ id: id(), authorId: actor.id, type: 'place-comment', placeId: p.id, commentId: comment.id, text: comment.text, sourceUrl: comment.sourceUrl, sourceTitle: comment.sourceTitle, sourceSite: comment.sourceSite, createdAt: comment.createdAt });
       changed(trip);
       return send(res, 201, { ok: true });
     }

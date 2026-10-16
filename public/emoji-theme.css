@@ -30,7 +30,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .splash-copy { z-index: 5; margin-top: clamp(60px, 9vh, 105px); }
 .splash-kicker { display: inline-flex; align-items: center; padding: 9px 16px; border: 2px solid #233f41; border-radius: 99px; background: #fff; box-shadow: 4px 5px 0 #f7c26d; color: #2b5758; letter-spacing: .13em; }
 .splash-copy h1 { max-width: 800px; margin-top: 24px; font-weight: 700; font-size: clamp(48px, 6.4vw, 88px); line-height: 1.16; text-shadow: 4px 5px 0 rgba(255,255,255,.75); }
-.splash-copy h1 span { display: inline-block; font-size: .62em; vertical-align: middle; animation: emojiWiggle 2.8s ease-in-out infinite; }
+.splash-title-face { display: inline-block; margin-left: .14em; padding: 0; border: 0; background: transparent; font: inherit; font-size: .62em; line-height: 1; vertical-align: middle; cursor: pointer; animation: emojiWiggle 2.8s ease-in-out infinite; }
 .splash-copy p { color: #516d70; font-size: clamp(14px, 1.5vw, 20px); font-weight: 600; }
 .splash-stickers { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 27px; }
 .splash-stickers span { padding: 8px 13px; border: 2px solid #314a49; border-radius: 99px; background: #fff; box-shadow: 3px 4px 0 rgba(55,77,76,.16); font-size: 12px; font-weight: 700; animation: emojiFloat 3.8s ease-in-out infinite; }
@@ -38,13 +38,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .splash-stickers span:nth-child(3) { animation-delay: -1.6s; background: #ffe7d7; }
 .splash-car { z-index: 6; bottom: 9%; width: clamp(270px, 34vw, 480px); height: clamp(170px, 22vw, 300px); transform: translateX(-130%); animation: emojiRide 3s cubic-bezier(.35,.1,.68,.9) forwards; }
 .splash-car-window { position: absolute; z-index: 5; left: 16%; right: 20%; top: 18%; display: flex; justify-content: space-around; align-items: flex-end; padding: 7px 5px 3px; border: 4px solid #394848; border-radius: 28px 28px 12px 12px; background: rgba(228,251,255,.88); box-shadow: inset 0 -10px 0 rgba(86,172,183,.2); transform: rotate(-4deg); }
-.splash-car-window span { font-size: clamp(38px, 5vw, 67px); line-height: 1; animation: emojiBob .5s ease-in-out infinite alternate; }
-.splash-car-window span:nth-child(2) { animation-delay: -.22s; }.splash-car-window span:nth-child(3) { animation-delay: -.11s; }
-.splash-vehicle { position: absolute; z-index: 3; left: 5%; bottom: -5%; font-family: 'Apple Color Emoji','Segoe UI Emoji',sans-serif; font-size: clamp(185px, 26vw, 355px); line-height: 1; filter: drop-shadow(4px 15px 8px rgba(46,56,54,.25)); }
+.splash-face { padding: 0; border: 0; background: transparent; font-size: clamp(38px, 5vw, 67px); line-height: 1; cursor: pointer; animation: emojiBob .5s ease-in-out infinite alternate; }
+.splash-face:nth-child(2) { animation-delay: -.22s; }.splash-face:nth-child(3) { animation-delay: -.11s; }
+.splash-face:hover,.splash-title-face:hover { filter: drop-shadow(0 4px 4px rgba(255,200,72,.55)); }
+.splash-face:focus-visible,.splash-title-face:focus-visible { outline: 3px solid #274c4d; outline-offset: 4px; border-radius: 50%; }
+.splash-face.is-reacting,.splash-title-face.is-reacting { animation: emojiFacePop .42s ease-out both; }
+@keyframes emojiFacePop { 0% { transform: scale(.75) rotate(-12deg); } 55% { transform: scale(1.28) rotate(10deg); } 100% { transform: scale(1) rotate(0); } }
+.splash-vehicle { position: absolute; z-index: 3; left: 5%; bottom: -5%; font-family: 'Apple Color Emoji','Segoe UI Emoji',sans-serif; font-size: clamp(185px, 26vw, 355px); line-height: 1; transform: scaleX(-1); transform-origin: center; filter: drop-shadow(4px 15px 8px rgba(46,56,54,.25)); }
 .splash-luggage { position: absolute; z-index: 4; top: 0; right: 4%; font-size: clamp(40px, 5vw, 70px); animation: emojiWiggle .8s ease-in-out infinite alternate; }
 .splash-dust { position: absolute; left: -18%; bottom: 13%; font-size: clamp(33px, 4vw, 60px); white-space: nowrap; animation: emojiDust .65s ease-in-out infinite alternate; }
 .splash-road { background: #6a8580; border-top: 10px solid #f7cc84; }
-.splash-road .road-stripe { position: absolute; left: 0; right: 0; top: 60%; height: 7px; background: repeating-linear-gradient(90deg,#ffe8aa 0 65px,transparent 65px 128px); animation: roadMove .7s linear infinite; }
+.splash-road .road-stripe { position: absolute; left: 0; right: 0; top: 60%; height: 7px; background: repeating-linear-gradient(90deg,#ffe8aa 0 65px,transparent 65px 128px); animation: none; }
 .road-stop { position: absolute; z-index: 4; top: -65px; font-size: 48px; filter: drop-shadow(0 6px 4px rgba(36,55,48,.18)); animation: emojiHop 2.1s ease-in-out infinite; }
 .stop-food { left: 12%; }.stop-play { left: 58%; animation-delay: -.6s; }.stop-photo { right: 10%; animation-delay: -1.1s; }
 .splash-skip { border: 2px solid #2c4f4d; box-shadow: 3px 4px 0 #f2ae72; background: #fff; color: #315d59; }
@@ -157,7 +161,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .splash-copy { margin-top: 14vh; }.splash-copy h1 { font-size: 42px; }.splash-copy p { max-width: 300px; font-size: 13px; }
   .splash-stickers { max-width: 290px; gap: 6px; }.splash-stickers span { padding: 6px 9px; font-size: 10px; }
   .deco-sun { right: 3%; top: 4%; font-size: 70px; }.deco-plane { top: 28%; right: 6%; }.deco-pin { right: 4%; bottom: 27%; }
-  .splash-car { width: 290px; height: 180px; bottom: 13%; }.splash-vehicle { font-size: 210px; }.splash-car-window span { font-size: 37px; }
+  .splash-car { width: 290px; height: 180px; bottom: 13%; }.splash-vehicle { font-size: 210px; }.splash-face { font-size: 37px; }
   .road-stop { font-size: 30px; top: -40px; }
   .welcome-brand span { width: 35px; height: 35px; font-size: 21px; }
   .map-title { max-width: 43%; }.map-title-icon { display: none; }
@@ -188,10 +192,10 @@ button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
 .splash-enter span { font-size: 21px; line-height: 1; }
 .splash-enter-hint { margin-top: 9px; color: #6f796b; font-size: 11px; font-weight: 600; }
 .splash-car { animation: emojiRideAndPark 3.4s cubic-bezier(.3,.08,.2,1) forwards; }
-.splash-car-window span { animation: emojiBob .6s ease-in-out infinite alternate; }
+.splash-face { animation: emojiBob .6s ease-in-out infinite alternate; }
 .splash-luggage { animation: none; }.splash-dust { animation: emojiDust .9s ease-in-out infinite alternate; }
 .road-stop { animation: none; }
-@keyframes emojiRideAndPark { 0% { transform: translateX(-140%) rotate(-5deg); } 58% { transform: translateX(49vw) rotate(2deg); } 78% { transform: translateX(41vw) rotate(-1deg); } 100% { transform: translateX(43vw) rotate(0); } }
+@keyframes emojiRideAndPark { 0% { transform: translateX(-140%) rotate(-5deg); } 58% { transform: translateX(38vw) rotate(2deg); } 78% { transform: translateX(42vw) rotate(-1deg); } 100% { transform: translateX(43vw) rotate(0); } }
 
 .welcome-left { background: #fff3d5; border-right: 2px solid #e9dfc8; }
 .welcome-brand span, .brand-mark { animation: none; box-shadow: none; border: 1px solid #e7cd83; background: #ffebaa; }
@@ -246,5 +250,9 @@ button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
   .welcome-map-card { display: none; }
   .schedule-page { border-radius: 0; box-shadow: none; }
 }
-@keyframes emojiRideAndParkMobile { 0% { transform: translateX(-140%) rotate(-4deg); } 58% { transform: translateX(21vw) rotate(2deg); } 100% { transform: translateX(16vw) rotate(0); } }
+@keyframes emojiRideAndParkMobile { 0% { transform: translateX(-140%) rotate(-4deg); } 58% { transform: translateX(12vw) rotate(2deg); } 100% { transform: translateX(16vw) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .splash-car { animation: none !important; transform: translateX(18vw) !important; } .welcome-pin.pin-b { animation: none; } }
+
+.comment-chat-context { margin-bottom: 5px; color: #527a68; font-size: 10px; font-weight: 700; }
+.comment-chat-source { display: block; margin-top: 7px; padding: 7px 9px; border: 1px solid #d6e3d9; border-radius: 7px; background: #fff; color: #3c7259; font-size: 10px; text-decoration: none; }
+.comment-chat-source:hover { border-color: #8db69b; background: #f8fff9; }

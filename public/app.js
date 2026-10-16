@@ -325,6 +325,17 @@ function renderAccountButton() {
 }
 let authReadyPromise = null;
 let splashFinished = false;
+const splashExpressions = ['😲', '😏', '🥹', '😘', '🤪', '😄'];
+function changeSplashFace(face) {
+  const step = Number(face.dataset.faceStep || 0);
+  face.textContent = splashExpressions[step % splashExpressions.length];
+  face.dataset.faceStep = String(step + 1);
+  clearTimeout(face.reactionTimer);
+  face.classList.remove('is-reacting');
+  void face.offsetWidth;
+  face.classList.add('is-reacting');
+  face.reactionTimer = setTimeout(() => face.classList.remove('is-reacting'), 420);
+}
 function showEntry() {
   state.eventSource?.close();
   $('#appShell').hidden = true;
@@ -848,9 +859,32 @@ function renderSidebarContent() {
   }
   enhanceSelects(area);
 }
+function groupMessages() {
+  const messages = state.trip.messages || [];
+  const syncedComments = new Set(messages.map(message => message.commentId).filter(Boolean));
+  const olderComments = state.trip.places.flatMap(place => (place.comments || []).filter(comment => !syncedComments.has(comment.id)).map(comment => ({
+    id: `older-comment:${comment.id}`, type: 'place-comment', commentId: comment.id, placeId: place.id,
+    authorId: comment.authorId, text: comment.text, sourceUrl: comment.sourceUrl, sourceTitle: comment.sourceTitle,
+    sourceSite: comment.sourceSite, createdAt: comment.createdAt
+  })));
+  return [...messages, ...olderComments].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+}
 function renderGroup() {
-  const messages = state.trip.messages;
-  return `<div class="discussion-header"><div class="discussion-eyebrow">TRAVEL ROOM</div><h2>旅行群聊</h2><p>所有想法都从这里开始，也可以直接在地图地点下讨论</p></div><div class="chat-scroll" id="chatScroll"><div class="chat-intro">你们的旅行讨论从这里开始</div>${messages.map(message => { const m = memberById(message.authorId); const linked = message.placeId && state.trip.places.find(p => p.id === message.placeId); return `<div class="message-row ${message.authorId === state.memberId ? 'mine' : ''}">${avatar(m)}<div class="message-body"><div class="message-meta">${escapeHtml(m.name)} · ${timeText(message.createdAt)}</div><div class="message-bubble">${escapeHtml(message.text)}${linked ? `<button class="linked-place" data-place-id="${linked.id}">📍 查看地图上的 ${escapeHtml(linked.name)} →</button>` : ''}</div></div></div>`; }).join('')}</div><form class="composer" id="groupForm"><textarea id="groupInput" placeholder="和伙伴聊聊这趟旅行…" maxlength="1000">${escapeHtml(state.drafts.group)}</textarea><div class="composer-bottom"><select id="messagePlace" class="status-select" style="width:155px;padding:6px 7px"><option value="">不关联地点</option>${state.trip.places.filter(p => p.status !== 'archived').map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><button class="send-button" type="submit">发送 ↗</button></div></form>`;
+  const messages = groupMessages();
+  const rows = messages.map(message => {
+    const member = memberById(message.authorId);
+    const linked = message.placeId && state.trip.places.find(p => p.id === message.placeId);
+    const isComment = message.type === 'place-comment';
+    const comment = isComment && linked?.comments.find(item => item.id === message.commentId);
+    const sourceUrl = isComment && safeUrl(comment?.sourceUrl || message.sourceUrl);
+    const sourceTitle = comment?.sourceTitle || message.sourceTitle || `${comment?.sourceSite || message.sourceSite || '参考'}帖子`;
+    const context = isComment ? `<div class="comment-chat-context">💬 评论了「${escapeHtml(linked?.name || '地点')}」</div>` : '';
+    const body = message.text ? `<div>${escapeHtml(message.text)}</div>` : isComment ? '<div>分享了一篇帖子</div>' : '';
+    const source = sourceUrl ? `<a class="comment-chat-source" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">📕 ${escapeHtml(sourceTitle)} ↗</a>` : '';
+    const placeButton = linked ? `<button class="linked-place" data-place-id="${escapeHtml(linked.id)}">📍 ${isComment ? '查看地点讨论' : `查看地图上的 ${escapeHtml(linked.name)}`} →</button>` : '';
+    return `<div class="message-row ${message.authorId === state.memberId ? 'mine' : ''}">${avatar(member)}<div class="message-body"><div class="message-meta">${escapeHtml(member.name)} · ${timeText(message.createdAt)}</div><div class="message-bubble">${context}${body}${source}${placeButton}</div></div></div>`;
+  }).join('');
+  return `<div class="discussion-header"><div class="discussion-eyebrow">TRAVEL ROOM</div><h2>旅行群聊</h2><p>所有想法都从这里开始，也可以直接在地图地点下讨论</p></div><div class="chat-scroll" id="chatScroll"><div class="chat-intro">你们的旅行讨论从这里开始</div>${rows}</div><form class="composer" id="groupForm"><textarea id="groupInput" placeholder="和伙伴聊聊这趟旅行…" maxlength="1000">${escapeHtml(state.drafts.group)}</textarea><div class="composer-bottom"><select id="messagePlace" class="status-select" style="width:155px;padding:6px 7px"><option value="">不关联地点</option>${state.trip.places.filter(p => p.status !== 'archived').map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><button class="send-button" type="submit">发送 ↗</button></div></form>`;
 }
 function renderPlace() {
   const p = selectedPlace(); if (!p) { state.rightMode = 'group'; return renderGroup(); }
@@ -1391,6 +1425,7 @@ document.addEventListener('click', event => {
   if (uiTrigger) { showUiSelect(uiTrigger); return; }
   if (openUiSelect) closeUiSelect();
   if (event.target === $('#modalRoot') || event.target.closest('[data-close-modal]')) { if ($('#authForm')) state.pendingAuthAction = ''; return closeModal(); }
+  const splashFace = event.target.closest('[data-splash-face]'); if (splashFace) { changeSplashFace(splashFace); return; }
   if (event.target.closest('#skipIntroButton')) { finishSplash(); return; }
   const authMode = event.target.closest('[data-auth-mode]'); if (authMode) return showAuth(authMode.dataset.authMode);
   if (event.target.closest('[data-show-home]')) { navigateHome(); return; }
