@@ -6,6 +6,8 @@
 
 iPhone 原型工程见 [ios/README.md](./ios/README.md)。它已具备原生加载、外部链接打开和系统分享入口；目前还未完成构建、真机验证或 App Store 提交。
 
+鸿蒙 NEXT／HarmonyOS 5+ 原型工程见 [harmonyos/README.md](./harmonyos/README.md)。已用 DevEco Studio 工具链编译出未签名 HAP；尚未在真机上验证或提交华为应用市场。
+
 ## 运行
 
 需要 Node.js 22 或更新版本。项目不需要安装依赖。
