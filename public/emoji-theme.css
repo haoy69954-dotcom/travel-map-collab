@@ -256,3 +256,12 @@ button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
 .comment-chat-context { margin-bottom: 5px; color: #527a68; font-size: 10px; font-weight: 700; }
 .comment-chat-source { display: block; margin-top: 7px; padding: 7px 9px; border: 1px solid #d6e3d9; border-radius: 7px; background: #fff; color: #3c7259; font-size: 10px; text-decoration: none; }
 .comment-chat-source:hover { border-color: #8db69b; background: #f8fff9; }
+.account-delete-link { display: block; margin: 16px 0 0; padding: 7px 0; border: 0; background: transparent; color: #b24e46; font-size: 12px; text-decoration: underline; }
+.account-delete-submit { background: #b24e46; }
+.content-actions { display: flex; gap: 10px; margin-top: 4px; }
+.content-actions button, .comment-report { padding: 2px 0; border: 0; background: transparent; color: #8b9189; font-size: 10px; cursor: pointer; }
+.content-actions button:hover, .comment-report:hover { color: #b24e46; text-decoration: underline; }
+.comment-report { margin-left: 8px; }
+.blocked-user-list { display: grid; gap: 7px; }
+.blocked-user-list > div { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; border: 1px solid #e6e9df; border-radius: 9px; font-size: 12px; }
+.blocked-user-list button { border: 0; background: transparent; color: #557b68; cursor: pointer; }

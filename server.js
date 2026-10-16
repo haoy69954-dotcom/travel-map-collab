@@ -20,6 +20,7 @@ const amapSecurityCode = process.env.AMAP_SECURITY_CODE || '';
 const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(root, 'data');
 const dataFile = path.join(dataDir, 'state.json');
 const authFile = path.join(dataDir, 'auth.json');
+const reportsFile = path.join(dataDir, 'reports.json');
 const port = Number(process.env.PORT || 4173);
 const host = process.env.HOST || '127.0.0.1';
 const clients = new Map();
@@ -68,12 +69,18 @@ fs.mkdirSync(dataDir, { recursive: true });
 let auth = fs.existsSync(authFile) ? JSON.parse(fs.readFileSync(authFile, 'utf8')) : { users: [], sessions: [] };
 auth.users ||= [];
 auth.sessions ||= [];
+let reports = fs.existsSync(reportsFile) ? JSON.parse(fs.readFileSync(reportsFile, 'utf8')) : [];
+function saveReports() {
+  const temp = `${reportsFile}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(reports, null, 2), { mode: 0o600 });
+  fs.renameSync(temp, reportsFile);
+}
 function saveAuth() {
   const temp = `${authFile}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(auth, null, 2), { mode: 0o600 });
   fs.renameSync(temp, authFile);
 }
-function publicUser(user) { return { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt }; }
+function publicUser(user) { return { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt, blockedUserIds: user.blockedUserIds || [], blockedUsers: (user.blockedUserIds || []).map(id => auth.users.find(item => item.id === id)).filter(Boolean).map(item => ({ id: item.id, name: item.name })) }; }
 function memberForUser(trip, user) { return user && trip.members.find(m => m.userId === user.id); }
 function sessionToken(req) { return (req.headers.cookie || '').split(';').map(item => item.trim()).find(item => item.startsWith('travel_session='))?.slice('travel_session='.length) || ''; }
 function sessionHash(token) { return crypto.createHash('sha256').update(token).digest('hex'); }
@@ -151,6 +158,31 @@ async function handleAuth(req, res, parts) {
     res.setHeader('set-cookie', 'travel_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
     return send(res, 200, { ok: true });
   }
+  if (parts[2] === 'block' && req.method === 'POST') {
+    const user = authRequired(req, res); if (!user) return;
+    const input = await body(req), targetId = trimmed(input.userId, 100);
+    if (!targetId || targetId === user.id || !auth.users.some(item => item.id === targetId)) return fail(res, 400, '无法屏蔽这位用户');
+    if (!Object.values(state.trips).some(trip => trip.members.some(member => member.userId === user.id) && trip.members.some(member => member.userId === targetId))) return fail(res, 403, '只能屏蔽同一旅行中的伙伴');
+    const blocked = new Set(user.blockedUserIds || []);
+    if (input.blocked === false) blocked.delete(targetId); else blocked.add(targetId);
+    user.blockedUserIds = [...blocked]; saveAuth();
+    return send(res, 200, { user: publicUser(user) });
+  }
+  if (parts[2] === 'delete' && req.method === 'POST') {
+    const user = authRequired(req, res); if (!user) return;
+    const input = await body(req);
+    if (input.confirm !== '删除账号') return fail(res, 400, '请确认删除账号');
+    if (!await passwordMatches(String(input.password || ''), user.passwordHash)) return fail(res, 403, '密码不正确，账号未删除');
+    deleteAccountData(user);
+    auth.users = auth.users.filter(item => item.id !== user.id);
+    auth.sessions = auth.sessions.filter(item => item.userId !== user.id);
+    for (const other of auth.users) other.blockedUserIds = (other.blockedUserIds || []).filter(blockedId => blockedId !== user.id);
+    reports = reports.filter(report => report.reporterUserId !== user.id && report.targetUserId !== user.id);
+    saveReports();
+    saveAuth();
+    res.setHeader('set-cookie', 'travel_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
+    return send(res, 200, { ok: true });
+  }
   return fail(res, 404, '接口不存在');
 }
 let state = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : demo();
@@ -198,6 +230,48 @@ function save() {
   fs.renameSync(temp, dataFile);
 }
 if (!fs.existsSync(dataFile) || migrated) save();
+
+function deleteAccountData(user) {
+  const removedImages = new Set();
+  const rememberImage = value => {
+    if (/^\/uploads\/[0-9a-f-]{36}\.(?:jpg|png|webp)$/.test(value || '')) removedImages.add(value);
+  };
+  for (const [tripId, trip] of Object.entries(state.trips)) {
+    const member = memberForUser(trip, user);
+    if (!member) continue;
+    const deletedPlaces = new Set(trip.places.filter(place => place.authorId === member.id).map(place => place.id));
+    for (const place of trip.places) {
+      if (deletedPlaces.has(place.id)) {
+        rememberImage(place.coverImage);
+        rememberImage(place.sourceImage);
+        for (const comment of place.comments || []) rememberImage(comment.sourceImage);
+      } else {
+        for (const comment of place.comments || []) if (comment.authorId === member.id) rememberImage(comment.sourceImage);
+        place.comments = (place.comments || []).filter(comment => comment.authorId !== member.id);
+        if (place.votes) delete place.votes[member.id];
+      }
+    }
+    trip.places = trip.places.filter(place => !deletedPlaces.has(place.id));
+    trip.messages = (trip.messages || []).filter(message => message.authorId !== member.id && !deletedPlaces.has(message.placeId));
+    trip.activity = (trip.activity || []).filter(item => item.authorId !== member.id);
+    trip.members = trip.members.filter(item => item.id !== member.id);
+    for (const hotel of Object.values(trip.dayHotels || {})) for (const role of ['start', 'end']) {
+      if (deletedPlaces.has(hotel[role])) hotel[role] = '';
+    }
+    for (const key of Object.keys(trip.legModes || {})) if ([...deletedPlaces].some(placeId => key.includes(`:${placeId}:`) || key.endsWith(`:${placeId}`))) delete trip.legModes[key];
+    for (let day = 1; day <= trip.dayCount; day++) trip.places.filter(place => place.dayIndex === day).sort((a, b) => (a.routeOrder ?? 0) - (b.routeOrder ?? 0)).forEach((place, index) => { place.routeOrder = index; });
+    presence.get(tripId)?.delete(member.id);
+    if (!trip.members.length) delete state.trips[tripId];
+    else { trip.revision += 1; publish(tripId, 'change', { revision: trip.revision }); publish(tripId, 'presence', { online: online(tripId) }); }
+  }
+  save();
+  const remaining = JSON.stringify(state);
+  for (const image of removedImages) if (!remaining.includes(image)) {
+    const filename = path.basename(image);
+    try { fs.rmSync(path.join(dataDir, 'uploads', filename), { force: true }); }
+    catch (error) { console.error('账号删除后清理照片失败:', filename, error); }
+  }
+}
 
 function send(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -473,6 +547,21 @@ async function handleApi(req, res, url) {
     const actor = memberForUser(trip, user);
     if (!actor) return fail(res, 403, '请先加入旅行');
     const action = input.action;
+    if (action === 'report-content') {
+      const kind = input.kind === 'comment' ? 'comment' : input.kind === 'message' ? 'message' : '';
+      const reason = trimmed(input.reason, 300);
+      const contentId = trimmed(input.contentId, 100);
+      const content = kind === 'message' ? trip.messages.find(message => message.id === contentId)
+        : kind === 'comment' ? trip.places.flatMap(place => place.comments || []).find(comment => comment.id === contentId) : null;
+      if (!content || !reason) return fail(res, 400, '请选择要举报的内容并填写原因');
+      if (content.authorId === actor.id) return fail(res, 400, '不能举报自己发布的内容');
+      if (!reports.some(report => report.reporterUserId === user.id && report.tripId === tripId && report.contentId === contentId)) {
+        const target = trip.members.find(member => member.id === content.authorId);
+        reports.push({ id: id(), reporterUserId: user.id, targetUserId: target?.userId || '', tripId, kind, contentId, reason, excerpt: trimmed(content.text, 500), status: 'pending', createdAt: now() });
+        saveReports();
+      }
+      return send(res, 201, { ok: true });
+    }
     const p = place(trip, input.placeId);
     if (action === 'rename-trip') {
       const title = typeof input.title === 'string' ? input.title.trim() : '';

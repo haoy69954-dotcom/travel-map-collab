@@ -19,6 +19,8 @@ const state = {
 
 function currentMember() { return state.trip?.members.find(m => m.id === state.memberId); }
 function memberById(id) { return state.trip?.members.find(m => m.id === id) || { id, name: '旅行伙伴', color: '#9aa99c' }; }
+function blockedMember(id) { const userId = memberById(id).userId; return Boolean(userId && state.user?.blockedUserIds?.includes(userId)); }
+function visibleComments(p) { return (p.comments || []).filter(comment => !blockedMember(comment.authorId)); }
 function selectedPlace() { return state.trip?.places.find(p => p.id === state.selectedPlaceId); }
 function placeDraft(id) { if (!state.placeDrafts.has(id)) state.placeDrafts.set(id, { text: '', link: '' }); return state.placeDrafts.get(id); }
 function isPhone() { return navigator.userAgentData?.mobile || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
@@ -30,7 +32,7 @@ function updateUnread() {
   let marker = localStorage.getItem(key);
   if (marker === null || groupVisible()) { marker = latest; localStorage.setItem(key, marker); }
   const lastIndex = messages.findIndex(message => message.id === marker);
-  state.unreadCount = messages.slice(lastIndex + 1).filter(message => message.authorId !== state.memberId).length;
+  state.unreadCount = messages.slice(lastIndex + 1).filter(message => message.authorId !== state.memberId && !blockedMember(message.authorId)).length;
   const label = state.unreadCount > 99 ? '99+' : String(state.unreadCount);
   for (const id of ['discussionToggleUnread', 'mobileChatUnread', 'groupTabUnread']) {
     const badge = document.getElementById(id); if (!badge) continue;
@@ -396,8 +398,15 @@ async function showAccount() {
   if (!state.user) return showAuth();
   try {
     const { trips } = await api('/api/auth/trips');
-    showModal(`<div class="modal auth-modal">${modalHeader('你的账号', escapeHtml(state.user.name))}<p>${escapeHtml(state.user.email)}</p><div class="account-trip-heading">我的旅行 · ${trips.length}</div><div class="account-trip-list">${trips.length ? trips.map(trip => `<button type="button" data-open-trip="${escapeHtml(trip.id)}" class="account-trip ${trip.id === state.tripId ? 'current' : ''}"><strong>${escapeHtml(trip.title)}</strong><span>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天</span></button>`).join('') : '<p>还没有加入旅行。创建一趟旅行，或打开伙伴发来的邀请链接。</p>'}</div><div class="modal-actions"><button type="button" class="secondary-button" data-logout>退出登录</button><button type="button" class="primary-button" data-close-modal>完成</button></div></div>`);
+    showModal(`<div class="modal auth-modal">${modalHeader('你的账号', escapeHtml(state.user.name))}<p>${escapeHtml(state.user.email)}</p><div class="account-trip-heading">我的旅行 · ${trips.length}</div><div class="account-trip-list">${trips.length ? trips.map(trip => `<button type="button" data-open-trip="${escapeHtml(trip.id)}" class="account-trip ${trip.id === state.tripId ? 'current' : ''}"><strong>${escapeHtml(trip.title)}</strong><span>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天</span></button>`).join('') : '<p>还没有加入旅行。创建一趟旅行，或打开伙伴发来的邀请链接。</p>'}</div>${state.user.blockedUsers?.length ? `<div class="account-trip-heading">已屏蔽的伙伴</div><div class="blocked-user-list">${state.user.blockedUsers.map(blocked => `<div><span>${escapeHtml(blocked.name)}</span><button type="button" data-unblock-user="${escapeHtml(blocked.id)}">解除屏蔽</button></div>`).join('')}</div>` : ''}<button type="button" class="account-delete-link" data-delete-account>删除账号与我发布的内容</button><div class="modal-actions"><button type="button" class="secondary-button" data-logout>退出登录</button><button type="button" class="primary-button" data-close-modal>完成</button></div></div>`);
   } catch (error) { toast(error.message); }
+}
+function showDeleteAccount() {
+  if (!state.user) return showAuth();
+  showModal(`<div class="modal auth-modal">${modalHeader('账号设置', '删除账号')}<p>删除后，账号、已加入的旅行、你发布的地点、评论和群聊消息都会移除，且无法恢复。其他旅伴创建的旅行会保留。</p><form id="deleteAccountForm"><label for="deleteAccountPassword">输入登录密码</label><input class="field" id="deleteAccountPassword" name="password" type="password" autocomplete="current-password" required><label for="deleteAccountConfirm">输入“删除账号”确认</label><input class="field" id="deleteAccountConfirm" name="confirm" pattern="删除账号" placeholder="删除账号" required><div class="modal-actions"><button type="button" class="secondary-button" data-return-account>返回</button><button type="submit" class="primary-button account-delete-submit">永久删除</button></div></form></div>`);
+}
+function showReportContent(contentId, kind) {
+  showModal(`<div class="modal auth-modal">${modalHeader('旅行空间', '举报内容')}<p>请说明这条${kind === 'comment' ? '评论' : '群聊消息'}的问题。举报会保存在服务端，供管理者处理。</p><form id="reportContentForm"><input type="hidden" name="contentId" value="${escapeHtml(contentId)}"><input type="hidden" name="kind" value="${kind}"><label for="reportReason">举报原因</label><textarea class="field" id="reportReason" name="reason" maxlength="300" placeholder="例如：骚扰、垃圾内容或不适合公开的资料" required></textarea><div class="modal-actions"><button type="button" class="secondary-button" data-close-modal>取消</button><button type="submit" class="primary-button">提交举报</button></div></form></div>`);
 }
 function showNewTrip() {
   if (!state.user) { state.pendingAuthAction = 'newTrip'; return showAuth(); }
@@ -772,8 +781,9 @@ function visibleMapPlaces() {
   if (state.sideView === 'places') return filteredPlaces();
   return state.trip.places.filter(p => p.status !== 'archived');
 }
-function commenterMembers(p) { return [...new Set((p.comments || []).map(comment => comment.authorId))].map(memberById); }
-function placeCard(p) {
+function commenterMembers(p) { return [...new Set(visibleComments(p).map(comment => comment.authorId))].map(memberById); }
+function placeCard(raw) {
+  const p = { ...raw, comments: visibleComments(raw) };
   const author = memberById(p.authorId);
   const voters = Object.entries(p.votes).filter(([, vote]) => vote === 'want').map(([id]) => memberById(id));
   const commenters = commenterMembers(p);
@@ -867,7 +877,7 @@ function groupMessages() {
     authorId: comment.authorId, text: comment.text, sourceUrl: comment.sourceUrl, sourceTitle: comment.sourceTitle,
     sourceSite: comment.sourceSite, createdAt: comment.createdAt
   })));
-  return [...messages, ...olderComments].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  return [...messages, ...olderComments].filter(message => !blockedMember(message.authorId)).sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 }
 function renderGroup() {
   const messages = groupMessages();
@@ -882,12 +892,14 @@ function renderGroup() {
     const body = message.text ? `<div>${escapeHtml(message.text)}</div>` : isComment ? '<div>分享了一篇帖子</div>' : '';
     const source = sourceUrl ? `<a class="comment-chat-source" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">📕 ${escapeHtml(sourceTitle)} ↗</a>` : '';
     const placeButton = linked ? `<button class="linked-place" data-place-id="${escapeHtml(linked.id)}">📍 ${isComment ? '查看地点讨论' : `查看地图上的 ${escapeHtml(linked.name)}`} →</button>` : '';
-    return `<div class="message-row ${message.authorId === state.memberId ? 'mine' : ''}">${avatar(member)}<div class="message-body"><div class="message-meta">${escapeHtml(member.name)} · ${timeText(message.createdAt)}</div><div class="message-bubble">${context}${body}${source}${placeButton}</div></div></div>`;
+    const actions = message.authorId !== state.memberId && member.userId ? `<div class="content-actions"><button data-report-content="${escapeHtml(isComment ? message.commentId : message.id)}" data-report-kind="${isComment ? 'comment' : 'message'}">举报</button><button data-block-user="${escapeHtml(member.userId)}">屏蔽此人</button></div>` : '';
+    return `<div class="message-row ${message.authorId === state.memberId ? 'mine' : ''}">${avatar(member)}<div class="message-body"><div class="message-meta">${escapeHtml(member.name)} · ${timeText(message.createdAt)}</div><div class="message-bubble">${context}${body}${source}${placeButton}</div>${actions}</div></div>`;
   }).join('');
   return `<div class="discussion-header"><div class="discussion-eyebrow">TRAVEL ROOM</div><h2>旅行群聊</h2><p>所有想法都从这里开始，也可以直接在地图地点下讨论</p></div><div class="chat-scroll" id="chatScroll"><div class="chat-intro">你们的旅行讨论从这里开始</div>${rows}</div><form class="composer" id="groupForm"><textarea id="groupInput" placeholder="和伙伴聊聊这趟旅行…" maxlength="1000">${escapeHtml(state.drafts.group)}</textarea><div class="composer-bottom"><select id="messagePlace" class="status-select" style="width:155px;padding:6px 7px"><option value="">不关联地点</option>${state.trip.places.filter(p => p.status !== 'archived').map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><button class="send-button" type="submit">发送 ↗</button></div></form>`;
 }
 function renderPlace() {
-  const p = selectedPlace(); if (!p) { state.rightMode = 'group'; return renderGroup(); }
+  let p = selectedPlace(); if (!p) { state.rightMode = 'group'; return renderGroup(); }
+  p = { ...p, comments: visibleComments(p) };
   const author = memberById(p.authorId);
   const votes = { want: 0, maybe: 0, pass: 0 }; Object.values(p.votes).forEach(value => { if (votes[value] !== undefined) votes[value]++; });
   const myVote = p.votes[state.memberId] || '';
@@ -914,7 +926,7 @@ function renderPlace() {
       </div>
       <section class="detail-section"><h3>要不要去？</h3><div class="vote-row">${[['want', '♡ 想去'], ['maybe', '◇ 可以'], ['pass', '— 暂不去']].map(([value, label]) => `<button class="vote-button ${myVote === value ? 'active' : ''}" data-vote="${value}">${label}</button>`).join('')}</div><div class="vote-summary">${votes.want} 人想去 · ${votes.maybe} 人可以 · ${votes.pass} 人暂不去</div></section>
       <section class="detail-section">${p.category === '酒店' ? `<h3>住宿安排</h3><p class="day-help">确定某天后，路线会从这家酒店出发，并连回这里。可在“行程”分别调整出发和结束酒店。</p>${hotelDayControls(p)}<button class="text-link" data-view="schedule">打开行程安排 ↗</button>` : `<h3>讨论进程</h3><select class="status-select" id="placeDay" data-place-day="${p.id}"><option value="" ${!p.dayIndex ? 'selected' : ''}>待定</option>${Array.from({ length: state.trip.dayCount || 3 }, (_, i) => `<option value="${i + 1}" ${p.dayIndex === i + 1 ? 'selected' : ''}>${dayLabel(i + 1)}</option>`).join('')}</select><p class="day-help">选 Day 后先预览路线变化，确认后才加入当天；选“待定”会从路线移出，地图图标变淡。</p>${p.dayIndex ? `<button class="text-link" data-map-day="${p.dayIndex}">在地图上看 Day ${p.dayIndex} 路线 ↗</button>` : ''}`}</section>
-      <section class="detail-section"><div class="detail-comment-head"><h3>地点讨论 · ${p.comments.length}</h3><button data-chat-about="${p.id}">在群聊提起 ↗</button></div>${commenters.length ? `<div class="commenter-line">${commenters.map(m => avatar(m)).join('')}<span>${commenters.map(m => escapeHtml(m.name)).join('、')}参与了讨论</span></div>` : ''}${p.comments.length ? p.comments.map(comment => { const m = memberById(comment.authorId); return `<div class="comment-item">${avatar(m)}<div class="comment-copy"><div class="comment-meta">${escapeHtml(m.name)}<span>${timeText(comment.createdAt)}</span></div>${comment.text ? `<p>${escapeHtml(comment.text)}</p>` : ''}${comment.sourceUrl ? sourcePreviewMarkup({ ...comment, commentId: comment.id, commentPlaceId: p.id }) : ''}</div></div>`; }).join('') : '<p style="font-size:11px;color:#a1a9a1">还没有回复，先说说你的想法。</p>'}</section>
+      <section class="detail-section"><div class="detail-comment-head"><h3>地点讨论 · ${p.comments.length}</h3><button data-chat-about="${p.id}">在群聊提起 ↗</button></div>${commenters.length ? `<div class="commenter-line">${commenters.map(m => avatar(m)).join('')}<span>${commenters.map(m => escapeHtml(m.name)).join('、')}参与了讨论</span></div>` : ''}${p.comments.length ? p.comments.map(comment => { const m = memberById(comment.authorId); return `<div class="comment-item">${avatar(m)}<div class="comment-copy"><div class="comment-meta">${escapeHtml(m.name)}<span>${timeText(comment.createdAt)}</span>${comment.authorId !== state.memberId && m.userId ? `<button class="comment-report" data-report-content="${escapeHtml(comment.id)}" data-report-kind="comment">举报</button>` : ''}</div>${comment.text ? `<p>${escapeHtml(comment.text)}</p>` : ''}${comment.sourceUrl ? sourcePreviewMarkup({ ...comment, commentId: comment.id, commentPlaceId: p.id }) : ''}</div></div>`; }).join('') : '<p style="font-size:11px;color:#a1a9a1">还没有回复，先说说你的想法。</p>'}</section>
     </div><form class="composer" id="placeForm"><textarea id="placeInput" placeholder="关于这个地点，你有什么想法？" maxlength="1000">${escapeHtml(placeDraft(p.id).text)}</textarea><input class="comment-link-input" id="placeCommentLink" data-comment-source-input placeholder="＋ 附小红书或大众点评帖子（可选）" value="${escapeHtml(placeDraft(p.id).link)}"><div class="comment-source-status" data-comment-source-status></div><div class="comment-source-preview" data-comment-source-preview></div><div class="composer-bottom"><span>评论和帖子会一起留在这个地点下</span><button class="send-button" type="submit">回复 ↗</button></div></form>`;
 }
 function renderDiscussion() {
@@ -1366,6 +1378,10 @@ async function heartbeat() {
 }
 async function share() {
   const url = `${location.origin}${location.pathname}?trip=${encodeURIComponent(state.tripId)}`;
+  if (window.webkit?.messageHandlers?.travelMap) {
+    window.webkit.messageHandlers.travelMap.postMessage({ type: 'share-trip', url });
+    return;
+  }
   try { await navigator.clipboard.writeText(url); toast('邀请链接已复制，发给旅行伙伴就能一起讨论'); }
   catch { showModal(`<div class="modal">${modalHeader('邀请伙伴', '分享这趟旅行')}<p>复制下面的链接，发给旅行伙伴。</p><input class="field" value="${escapeHtml(url)}" readonly onclick="this.select()"><div class="modal-actions"><button type="button" class="primary-button" data-close-modal>完成</button></div></div>`); }
 }
@@ -1435,6 +1451,24 @@ document.addEventListener('click', event => {
   if (event.target.closest('[data-retry-home]')) { showHome(); return; }
   if (event.target.closest('[data-home-account]')) { showAccount(); return; }
   if (event.target.closest('#accountButton')) return showAccount();
+  if (event.target.closest('[data-delete-account]')) { showDeleteAccount(); return; }
+  if (event.target.closest('[data-return-account]')) { showAccount(); return; }
+  const reportContent = event.target.closest('[data-report-content]');
+  if (reportContent) { showReportContent(reportContent.dataset.reportContent, reportContent.dataset.reportKind); return; }
+  const blockUser = event.target.closest('[data-block-user]');
+  if (blockUser) {
+    api('/api/auth/block', { method: 'POST', body: JSON.stringify({ userId: blockUser.dataset.blockUser, blocked: true }) })
+      .then(result => { state.user = result.user; renderDiscussion(); renderSidebarContent(); toast('已屏蔽这位伙伴的消息和评论'); })
+      .catch(error => toast(error.message));
+    return;
+  }
+  const unblockUser = event.target.closest('[data-unblock-user]');
+  if (unblockUser) {
+    api('/api/auth/block', { method: 'POST', body: JSON.stringify({ userId: unblockUser.dataset.unblockUser, blocked: false }) })
+      .then(result => { state.user = result.user; showAccount(); renderDiscussion(); renderSidebarContent(); toast('已解除屏蔽'); })
+      .catch(error => toast(error.message));
+    return;
+  }
   if (event.target.closest('[data-logout],[data-home-logout]')) {
     api('/api/auth/logout', { method: 'POST', body: '{}' }).then(() => { state.user = null; state.memberId = ''; state.pendingAuthAction = ''; renderAccountButton(); showAuth(); toast('已退出登录'); }).catch(error => toast(error.message));
     return;
@@ -1542,6 +1576,14 @@ document.addEventListener('submit', async event => {
       const result = await api(`/api/auth/${data.mode}`, { method: 'POST', body: JSON.stringify(data) });
       state.user = result.user; renderAccountButton(); await showHome();
       if (state.pendingAuthAction === 'newTrip') { state.pendingAuthAction = ''; showNewTrip(); }
+    } else if (form.id === 'deleteAccountForm') {
+      const data = Object.fromEntries(new FormData(form));
+      await api('/api/auth/delete', { method: 'POST', body: JSON.stringify(data) });
+      location.href = location.pathname;
+    } else if (form.id === 'reportContentForm') {
+      const data = Object.fromEntries(new FormData(form));
+      await action({ action: 'report-content', ...data });
+      closeModal(); toast('举报已提交');
     } else if (form.id === 'joinForm') {
       const result = await api(`/api/trips/${encodeURIComponent(state.tripId)}/join`, { method: 'POST', body: '{}' });
       state.memberId = result.member.id;

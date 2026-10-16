@@ -71,12 +71,27 @@ test('accounts protect trip writes and keep membership across logins', async () 
     assert.equal(commentMessages[0].text, '周六中午来吃吧');
     assert.equal(commentMessages[1].sourceUrl, linkedPost);
     assert.equal(commentMessages[1].sourceTitle, '店铺攻略');
+    assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'report-content', kind: 'comment', contentId: comments[1].id, reason: '测试举报' }, bob.cookie)).status, 201);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dataDir, 'reports.json'), 'utf8')).length, 1);
+    const blocked = await request('/api/auth/block', 'POST', { userId: alice.data.user.id, blocked: true }, bob.cookie);
+    assert.equal(blocked.status, 200);
+    assert.deepEqual(blocked.data.user.blockedUserIds, [alice.data.user.id]);
     assert.equal((await request(`/api/trips/${tripId}/images`, 'POST', undefined, '', { 'x-member-id': aliceMember.id })).status, 401);
     assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'message', text: '跨站请求' }, alice.cookie, { origin: 'https://other.example.test' })).status, 403);
     assert.equal((await request('/api/auth/logout', 'POST', {}, alice.cookie)).status, 200);
     assert.equal((await request('/api/auth/me', 'GET', undefined, alice.cookie)).data.user, null);
     const login = await request('/api/auth/login', 'POST', { email: 'alice@example.test', password: 'a long password 123' });
     assert.equal(login.status, 200);
+    assert.equal((await request('/api/auth/trips', 'GET', undefined, login.cookie)).data.trips[0].id, tripId);
+    assert.equal((await request('/api/auth/delete', 'POST', { confirm: '删除账号', password: 'wrong password' }, bob.cookie)).status, 403);
+    assert.equal((await request('/api/auth/me', 'GET', undefined, bob.cookie)).data.user.id, bob.data.user.id);
+    assert.equal((await request('/api/auth/delete', 'POST', { confirm: '删除账号', password: 'another long password' }, bob.cookie)).status, 200);
+    assert.equal((await request('/api/auth/me', 'GET', undefined, bob.cookie)).data.user, null);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dataDir, 'reports.json'), 'utf8')).length, 0);
+    const afterDeletion = (await request(`/api/trips/${tripId}`)).data.trip;
+    assert.ok(!afterDeletion.members.some(member => member.id === joined.data.member.id));
+    assert.ok(!afterDeletion.messages.some(item => item.authorId === joined.data.member.id));
+    assert.ok(!afterDeletion.places.find(item => item.id === placeId).comments.some(item => item.authorId === joined.data.member.id));
     assert.equal((await request('/api/auth/trips', 'GET', undefined, login.cookie)).data.trips[0].id, tripId);
   } finally {
     server.kill();

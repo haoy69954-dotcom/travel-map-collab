@@ -1,0 +1,97 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 56;
+ objects = {
+
+/* Begin PBXBuildFile section */
+  101000000000000000000001 /* TravelMapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102000000000000000000001 /* TravelMapApp.swift */; };
+  101000000000000000000002 /* TravelMapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102000000000000000000002 /* TravelMapScreen.swift */; };
+  101000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 102000000000000000000003 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+  102000000000000000000001 /* TravelMapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelMapApp.swift; sourceTree = "<group>"; };
+  102000000000000000000002 /* TravelMapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelMapScreen.swift; sourceTree = "<group>"; };
+  102000000000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+  102000000000000000000004 /* TravelMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+  103000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+  104000000000000000000001 = {
+   isa = PBXGroup;
+   children = (104000000000000000000002 /* TravelMap */, 104000000000000000000003 /* Products */);
+   sourceTree = "<group>";
+  };
+  104000000000000000000002 /* TravelMap */ = {
+   isa = PBXGroup;
+   children = (102000000000000000000001 /* TravelMapApp.swift */, 102000000000000000000002 /* TravelMapScreen.swift */, 102000000000000000000003 /* Assets.xcassets */);
+   path = TravelMap;
+   sourceTree = "<group>";
+  };
+  104000000000000000000003 /* Products */ = {
+   isa = PBXGroup;
+   children = (102000000000000000000004 /* TravelMap.app */);
+   name = Products;
+   sourceTree = "<group>";
+  };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+  105000000000000000000001 /* TravelMap */ = {
+   isa = PBXNativeTarget;
+   buildConfigurationList = 106000000000000000000002 /* Build configuration list for PBXNativeTarget "TravelMap" */;
+   buildPhases = (107000000000000000000001 /* Sources */, 103000000000000000000001 /* Frameworks */, 107000000000000000000002 /* Resources */);
+   buildRules = ();
+   dependencies = ();
+   name = TravelMap;
+   productName = TravelMap;
+   productReference = 102000000000000000000004 /* TravelMap.app */;
+   productType = "com.apple.product-type.application";
+  };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+  108000000000000000000001 /* Project object */ = {
+   isa = PBXProject;
+   attributes = { BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2600; LastUpgradeCheck = 2600; TargetAttributes = {105000000000000000000001 = {CreatedOnToolsVersion = 26.0; }; }; };
+   buildConfigurationList = 106000000000000000000001 /* Build configuration list for PBXProject "TravelMap" */;
+   compatibilityVersion = "Xcode 14.0";
+   developmentRegion = zh_CN;
+   hasScannedForEncodings = 0;
+   knownRegions = (zh_CN, en, Base);
+   mainGroup = 104000000000000000000001;
+   productRefGroup = 104000000000000000000003 /* Products */;
+   projectDirPath = "";
+   projectRoot = "";
+   targets = (105000000000000000000001 /* TravelMap */);
+  };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+  107000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (101000000000000000000003 /* Assets.xcassets in Resources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+  107000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (101000000000000000000001 /* TravelMapApp.swift in Sources */, 101000000000000000000002 /* TravelMapScreen.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+  109000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_OPTIMIZATION_LEVEL = 0; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 5.0; }; name = Debug; };
+  109000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; GCC_OPTIMIZATION_LEVEL = s; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+  109000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "旅伴地图"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait; MARKETING_VERSION = 1.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.haoy69954.travelmap; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+  109000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = "旅伴地图"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait; MARKETING_VERSION = 1.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.haoy69954.travelmap; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+  106000000000000000000001 /* Build configuration list for PBXProject "TravelMap" */ = {isa = XCConfigurationList; buildConfigurations = (109000000000000000000001 /* Debug */, 109000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  106000000000000000000002 /* Build configuration list for PBXNativeTarget "TravelMap" */ = {isa = XCConfigurationList; buildConfigurations = (109000000000000000000003 /* Debug */, 109000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+ };
+ rootObject = 108000000000000000000001 /* Project object */;
+}
