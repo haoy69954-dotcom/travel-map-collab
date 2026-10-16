@@ -112,3 +112,6 @@
 @media(max-width:900px){.home-button span{display:none}.home-button{font-size:18px;padding:7px 11px}}
 @media(max-width:500px){.splash-copy{width:calc(100% - 42px);margin-top:17vh}.splash-copy h1{font-size:44px}.splash-car{width:340px;bottom:12%}.splash-road{height:17%}.splash-skip{right:17px;top:18px}.welcome-left{min-height:170px}.welcome-copy h1{font-size:29px}.welcome-right{padding:25px 20px}.entry-content h2{font-size:30px}.home-projects{max-height:none}}
 @media(prefers-reduced-motion:reduce){.splash-car,.splash-car svg,.splash-wheel,.splash-road span,.splash-cloud{animation-duration:.01ms!important;animation-iteration-count:1!important}.splash-car{transform:translateX(25vw)}}
+.privacy-entry-link { display: block; margin: 10px 0 18px; text-align: center; color: #537c6f; font-size: 12px; }
+.privacy-sidebar-link { display: block; padding: 11px 4px 0; text-align: center; color: #5b8072; font-size: 11px; text-decoration: underline; }
+.account-privacy-link { display: block; margin: 12px 0; color: #317b69; font-size: 13px; font-weight: 700; }
