@@ -21,11 +21,6 @@ async function startTravelMap() {
   fonts.rel = 'stylesheet';
   fonts.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap';
   document.head.append(fonts);
-  const leafletCss = document.createElement('link');
-  leafletCss.rel = 'stylesheet';
-  leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-  document.head.append(leafletCss);
-  await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
   await loadScript('/qrcode.min.js');
   await loadScript('/app.js');
 }

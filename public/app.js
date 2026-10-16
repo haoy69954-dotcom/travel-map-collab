@@ -398,7 +398,7 @@ async function showAccount() {
   if (!state.user) return showAuth();
   try {
     const { trips } = await api('/api/auth/trips');
-    showModal(`<div class="modal auth-modal">${modalHeader('你的账号', escapeHtml(state.user.name))}<p>${escapeHtml(state.user.email)}</p><div class="account-trip-heading">我的旅行 · ${trips.length}</div><div class="account-trip-list">${trips.length ? trips.map(trip => `<button type="button" data-open-trip="${escapeHtml(trip.id)}" class="account-trip ${trip.id === state.tripId ? 'current' : ''}"><strong>${escapeHtml(trip.title)}</strong><span>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天</span></button>`).join('') : '<p>还没有加入旅行。创建一趟旅行，或打开伙伴发来的邀请链接。</p>'}</div>${state.user.blockedUsers?.length ? `<div class="account-trip-heading">已屏蔽的伙伴</div><div class="blocked-user-list">${state.user.blockedUsers.map(blocked => `<div><span>${escapeHtml(blocked.name)}</span><button type="button" data-unblock-user="${escapeHtml(blocked.id)}">解除屏蔽</button></div>`).join('')}</div>` : ''}<a class="account-privacy-link" href="/privacy.html" target="_blank" rel="noopener">查看隐私政策与联系运营者 ↗</a><button type="button" class="account-delete-link" data-delete-account>删除账号与我发布的内容</button><div class="modal-actions"><button type="button" class="secondary-button" data-logout>退出登录</button><button type="button" class="primary-button" data-close-modal>完成</button></div></div>`);
+    showModal(`<div class="modal auth-modal">${modalHeader('你的账号', escapeHtml(state.user.name))}<p>${escapeHtml(state.user.email)}</p><div class="account-trip-heading">我的旅行 · ${trips.length}</div><div class="account-trip-list">${trips.length ? trips.map(trip => `<button type="button" data-open-trip="${escapeHtml(trip.id)}" class="account-trip ${trip.id === state.tripId ? 'current' : ''}"><strong>${escapeHtml(trip.title)}</strong><span>${escapeHtml(trip.destination || '目的地待定')} · ${trip.dayCount} 天</span></button>`).join('') : '<p>还没有加入旅行。创建一趟旅行，或打开伙伴发来的邀请链接。</p>'}</div>${state.user.blockedUsers?.length ? `<div class="account-trip-heading">已屏蔽的伙伴</div><div class="blocked-user-list">${state.user.blockedUsers.map(blocked => `<div><span>${escapeHtml(blocked.name)}</span><button type="button" data-unblock-user="${escapeHtml(blocked.id)}">解除屏蔽</button></div>`).join('')}</div>` : ''}<a class="account-privacy-link" href="/privacy.html">查看隐私政策与联系运营者 ↗</a><button type="button" class="account-delete-link" data-delete-account>删除账号与我发布的内容</button><div class="modal-actions"><button type="button" class="secondary-button" data-logout>退出登录</button><button type="button" class="primary-button" data-close-modal>完成</button></div></div>`);
   } catch (error) { toast(error.message); }
 }
 function showDeleteAccount() {
@@ -1116,6 +1116,26 @@ function previewOptimizedDay(day) {
 function renderAll() { if (!state.trip) return; renderSummary(); renderMembers(); renderFilters(); renderSidebarContent(); renderSchedulePage(); renderDiscussion(); renderMapDayBar(); renderRoutePreview(); renderRoutes(); renderMarkers(); renderConnection(); }
 
 let amapSdkPromise = null;
+let leafletSdkPromise = null;
+async function ensureLeaflet() {
+  if (window.L?.map) return true;
+  if (leafletSdkPromise) return leafletSdkPromise;
+  leafletSdkPromise = new Promise(resolve => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.append(css);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => { script.remove(); resolve(false); }, 9000);
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => { clearTimeout(timeout); resolve(Boolean(window.L?.map)); };
+    script.onerror = () => { clearTimeout(timeout); resolve(false); };
+    document.head.append(script);
+  });
+  const loaded = await leafletSdkPromise;
+  if (!loaded) leafletSdkPromise = null;
+  return loaded;
+}
 async function ensureAmapSdk() {
   if (window.AMap?.Map) return true;
   if (amapSdkPromise) return amapSdkPromise;
@@ -1389,7 +1409,8 @@ async function enterTrip() {
   $('#entryScreen').hidden = true;
   $('#appShell').hidden = false;
   await refreshTrip();
-  await loadAmap(); initMap(); renderMarkers(); renderRoutes(); renderMapDayBar(); connectEvents();
+  if (!await loadAmap()) await ensureLeaflet();
+  initMap(); renderMarkers(); renderRoutes(); renderMapDayBar(); connectEvents();
   if (!state.memberId) showJoin(); else { renderAll(); heartbeat(); refreshLinkedPhotos(); }
   setInterval(heartbeat, 20_000);
 }
