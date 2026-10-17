@@ -258,12 +258,27 @@ button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
   .sidebar-bottom { position: sticky; bottom: 0; z-index: 2; background: #fffefa; }
 }
 @media (max-width: 500px) {
+  .welcome-screen { grid-template-rows: auto minmax(0, 1fr); }
   .splash-enter { margin-top: 18px; padding: 11px 18px; min-width: 160px; font-size: 13px; }
   .splash-enter-hint { font-size: 10px; }
   .splash-car { animation-name: emojiRideAndParkMobile; }
   .deco-plane { right: 9%; top: 34%; }.deco-pin { right: 3%; bottom: 26%; }
   .welcome-map-card { display: none; }
   .schedule-page { border-radius: 0; box-shadow: none; }
+  .welcome-left { min-height: 118px; padding: 12px 20px 10px; }
+  .welcome-brand { font-size: 15px; }
+  .welcome-brand span { width: 30px; height: 30px; font-size: 18px; }
+  .welcome-copy { margin-top: 9px; }
+  .welcome-copy h1 { margin: 4px 0; font-size: 24px; line-height: 1.15; }
+  .welcome-right { padding: 15px 20px 22px; }
+  .entry-content h2 { margin: 5px 0; font-size: 26px; }
+  .entry-lede { margin-bottom: 12px; line-height: 1.4; }
+  .entry-content .auth-switch { margin-bottom: 12px; }
+  .entry-content label { margin: 8px 0 4px; }
+  .entry-content .field { padding: 10px 12px; }
+  .entry-content .auth-hint { margin-top: 5px; }
+  .entry-content .privacy-consent-row { margin-top: 8px !important; }
+  .entry-content .auth-submit { margin-top: 12px; }
 }
 @keyframes emojiRideAndParkMobile { 0% { transform: translateX(-140%) rotate(-4deg); } 58% { transform: translateX(12vw) rotate(2deg); } 100% { transform: translateX(16vw) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .splash-car { animation: none !important; transform: translateX(18vw) !important; } .welcome-pin.pin-b { animation: none; } }
