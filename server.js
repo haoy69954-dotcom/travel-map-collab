@@ -122,6 +122,7 @@ async function handleAuth(req, res, parts) {
   }
   if (parts[2] === 'register' && req.method === 'POST') {
     const input = await body(req);
+    if (input.privacyAccepted !== 'yes') return fail(res, 400, '请先阅读并同意隐私政策');
     const name = trimmed(input.name, 24), email = trimmed(input.email, 254).toLowerCase(), password = String(input.password || '');
     if (name.length < 2) return fail(res, 400, '昵称至少需要 2 个字');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(res, 400, '请输入有效的邮箱地址');
@@ -129,7 +130,7 @@ async function handleAuth(req, res, parts) {
     if (auth.users.some(user => user.email === email)) return fail(res, 409, '这个邮箱已经注册，请直接登录');
     const hashed = await passwordHash(password);
     if (auth.users.some(user => user.email === email)) return fail(res, 409, '这个邮箱已经注册，请直接登录');
-    const user = { id: id(), name, email, passwordHash: hashed, createdAt: now() };
+    const user = { id: id(), name, email, passwordHash: hashed, privacyAcceptedAt: now(), createdAt: now() };
     auth.users.push(user); saveAuth(); setSession(res, user, req);
     return send(res, 201, { user: publicUser(user) });
   }

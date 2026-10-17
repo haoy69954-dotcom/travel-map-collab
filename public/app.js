@@ -360,9 +360,13 @@ async function finishSplash() {
 }
 function showAuth(mode = 'login') {
   const register = mode === 'register';
+  const needsConsent = register || localStorage.getItem('travel-privacy-consent') !== '2026-10-16';
   closeModal(); showEntry();
-  $('#entryContent').innerHTML = `<div class="entry-eyebrow">TRAVEL TOGETHER</div><h2>${register ? '创建你的账号' : '欢迎回来'}</h2><p class="entry-lede">${register ? '注册后，和旅伴一起在地图上留下每个想法。' : '登录后，继续你们聊到一半的旅程。'}</p><div class="auth-switch"><button type="button" data-auth-mode="login" class="${register ? '' : 'active'}">登录</button><button type="button" data-auth-mode="register" class="${register ? 'active' : ''}">注册</button></div><form id="authForm"><input type="hidden" name="mode" value="${mode}">${register ? '<label for="authName">你的昵称</label><input class="field" id="authName" name="name" autocomplete="nickname" maxlength="24" minlength="2" placeholder="旅行伙伴看到的名字" required>' : ''}<label for="authEmail">邮箱</label><input class="field" id="authEmail" name="email" type="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required><label for="authPassword">密码</label><input class="field" id="authPassword" name="password" type="password" autocomplete="${register ? 'new-password' : 'current-password'}" minlength="${register ? 10 : 1}" maxlength="128" placeholder="${register ? '至少 10 个字符' : '输入密码'}" required>${register ? '<p class="auth-hint">邮箱只用来登录，目前不会发送验证邮件。</p>' : ''}<button type="submit" class="primary-button auth-submit">${register ? '注册并进入' : '登录并进入'} →</button></form><div class="home-footer-actions"><button type="button" data-show-home>🏠 项目首页</button></div>`;
-  $('#entryContent').querySelector('input:not([type=hidden])')?.focus();
+  $('#entryContent').innerHTML = `<div class="entry-eyebrow">TRAVEL TOGETHER</div><h2>${register ? '创建你的账号' : '欢迎回来'}</h2><p class="entry-lede">${register ? '注册后，和旅伴一起在地图上留下每个想法。' : '登录后，继续你们聊到一半的旅程。'}</p><div class="auth-switch"><button type="button" data-auth-mode="login" class="${register ? '' : 'active'}">登录</button><button type="button" data-auth-mode="register" class="${register ? 'active' : ''}">注册</button></div><form id="authForm"><input type="hidden" name="mode" value="${mode}">${register ? '<label for="authName">你的昵称</label><input class="field" id="authName" name="name" autocomplete="nickname" maxlength="24" minlength="2" placeholder="旅行伙伴看到的名字" required>' : ''}<label for="authEmail">邮箱</label><input class="field" id="authEmail" name="email" type="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required><label for="authPassword">密码</label><input class="field" id="authPassword" name="password" type="password" autocomplete="${register ? 'new-password' : 'current-password'}" minlength="${register ? 10 : 1}" maxlength="128" placeholder="${register ? '至少 10 个字符' : '输入密码'}" required>${register ? '<p class="auth-hint">邮箱只用来登录，目前不会发送验证邮件。</p>' : ''}${needsConsent ? '<label class="privacy-consent-row"><input type="checkbox" name="privacyAccepted" value="yes" required><span>我已阅读并同意 <button type="button" class="privacy-inline-link" data-open-privacy>《隐私政策》</button></span></label>' : ''}<button type="submit" class="primary-button auth-submit">${register ? '注册并进入' : '登录并进入'} →</button></form>`;
+  if (window.innerWidth > 900) $('#entryContent').querySelector('input:not([type=hidden])')?.focus();
+}
+function showPrivacyPolicy() {
+  showModal(`<div class="modal privacy-modal">${modalHeader('注册与登录', '隐私政策')}<iframe class="privacy-policy-frame" src="/privacy.html" title="隐私政策"></iframe></div>`);
 }
 async function showHome() {
   closeModal(); showEntry();
@@ -1420,7 +1424,9 @@ async function start() {
     const nextView = sessionStorage.getItem('travel-next-view');
     sessionStorage.removeItem('travel-next-view');
     if (nextView) $('#entryScreen').hidden = true;
-    authReadyPromise = api('/api/auth/me').then(result => { state.user = result.user; renderAccountButton(); }).catch(error => { state.user = null; renderAccountButton(); toast(error.message); });
+    authReadyPromise = localStorage.getItem('travel-privacy-consent') === '2026-10-16'
+      ? api('/api/auth/me').then(result => { state.user = result.user; renderAccountButton(); }).catch(error => { state.user = null; renderAccountButton(); toast(error.message); })
+      : Promise.resolve();
     if (nextView === 'trip' && state.tripId) {
       await authReadyPromise;
       if (state.user) return await enterTrip();
@@ -1450,6 +1456,7 @@ document.addEventListener('error', event => {
 }, true);
 
 document.addEventListener('click', event => {
+  if (event.target.closest('[data-open-privacy]')) { showPrivacyPolicy(); return; }
   const uiOption = event.target.closest('[data-ui-option]');
   if (uiOption && openUiSelect) {
     const select = openUiSelect.select;
@@ -1595,6 +1602,10 @@ document.addEventListener('submit', async event => {
     if (form.id === 'authForm') {
       const data = Object.fromEntries(new FormData(form));
       const result = await api(`/api/auth/${data.mode}`, { method: 'POST', body: JSON.stringify(data) });
+      if (data.privacyAccepted === 'yes') {
+        localStorage.setItem('travel-privacy-consent', '2026-10-16');
+        loadTravelFonts();
+      }
       state.user = result.user; renderAccountButton(); await showHome();
       if (state.pendingAuthAction === 'newTrip') { state.pendingAuthAction = ''; showNewTrip(); }
     } else if (form.id === 'deleteAccountForm') {

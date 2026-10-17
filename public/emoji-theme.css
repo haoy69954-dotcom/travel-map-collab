@@ -11,6 +11,17 @@
   --shadow: 0 18px 48px rgba(76, 87, 65, .14);
 }
 body { background: var(--paper); }
+html.native-app, body.native-app { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.native-app .entry-screen { overscroll-behavior: none; }
+body.native-app .splash-screen { height: 100dvh; min-height: 0; overscroll-behavior: none; }
+body.native-app .welcome-screen, body.native-app .app-shell { overscroll-behavior: none; }
+.privacy-consent-row { display: flex !important; align-items: center; gap: 8px; margin: 18px 0 0 !important; font-size: 12px; line-height: 1.6; }
+.privacy-consent-row input { flex: none; width: 17px; height: 17px; accent-color: var(--teal); }
+.privacy-inline-link { border: 0; background: transparent; color: var(--teal-dark); font-size: inherit; font-weight: 700; text-decoration: underline; padding: 0; }
+.privacy-entry-link { width: 100%; border: 0; background: transparent; cursor: pointer; }
+.privacy-modal { width: min(640px, 100%); }
+.privacy-policy-frame { display: block; width: 100%; height: min(65dvh, 620px); border: 0; border-radius: 12px; background: #fff9e2; }
+.modal-root { overflow-y: auto; overscroll-behavior: contain; }
 button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 button { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
 button:hover:not(:disabled) { transform: translateY(-2px); }
@@ -241,6 +252,10 @@ button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
 @media (max-width: 900px) {
   .welcome-left { border-right: 0; border-bottom: 2px solid #e9dfc8; background: #fff3d5; }
   .mobile-nav { box-shadow: none; }
+  .sidebar { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
+  .sidebar > * { flex-shrink: 0; }
+  .sidebar-content { flex: none; overflow: visible; min-height: 0; padding-bottom: 20px; }
+  .sidebar-bottom { position: sticky; bottom: 0; z-index: 2; background: #fffefa; }
 }
 @media (max-width: 500px) {
   .splash-enter { margin-top: 18px; padding: 11px 18px; min-width: 160px; font-size: 13px; }

@@ -17,17 +17,26 @@ async function startTravelMap() {
   started = true;
   document.getElementById('privacyGate').hidden = true;
   document.getElementById('entryScreen').hidden = false;
-  const fonts = document.createElement('link');
-  fonts.rel = 'stylesheet';
-  fonts.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap';
-  document.head.append(fonts);
+  if (localStorage.getItem(PRIVACY_KEY) === PRIVACY_VERSION) loadTravelFonts();
   await loadScript('/qrcode.min.js');
   await loadScript('/app.js');
 }
 
-const nativeConsent = new URLSearchParams(location.search).get('nativeConsent') === '1';
-if (nativeConsent) localStorage.setItem(PRIVACY_KEY, PRIVACY_VERSION);
-if (localStorage.getItem(PRIVACY_KEY) === PRIVACY_VERSION) {
+function loadTravelFonts() {
+  if (document.getElementById('travelFonts')) return;
+  const fonts = document.createElement('link');
+  fonts.id = 'travelFonts';
+  fonts.rel = 'stylesheet';
+  fonts.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap';
+  document.head.append(fonts);
+}
+
+const nativeApp = new URLSearchParams(location.search).get('nativeApp') === '1';
+if (nativeApp) {
+  document.documentElement.classList.add('native-app');
+  document.body.classList.add('native-app');
+}
+if (nativeApp || localStorage.getItem(PRIVACY_KEY) === PRIVACY_VERSION) {
   startTravelMap();
 } else {
   document.getElementById('acceptPrivacyButton').addEventListener('click', () => {

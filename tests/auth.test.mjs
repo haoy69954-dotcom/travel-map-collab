@@ -23,7 +23,8 @@ test('accounts protect trip writes and keep membership across logins', async () 
     assert.ok(ready, 'test server starts');
     assert.equal(fs.existsSync(path.join(dataDir, 'auth.json')), false, 'account store is created on first registration');
     assert.equal((await request('/api/trips', 'POST', { title: '未登录' })).status, 401);
-    const alice = await request('/api/auth/register', 'POST', { name: '小雨', email: 'alice@example.test', password: 'a long password 123' });
+    assert.equal((await request('/api/auth/register', 'POST', { name: '小雨', email: 'alice@example.test', password: 'a long password 123' })).status, 400);
+    const alice = await request('/api/auth/register', 'POST', { name: '小雨', email: 'alice@example.test', password: 'a long password 123', privacyAccepted: 'yes' });
     assert.equal(alice.status, 201);
     assert.ok(alice.cookie.startsWith('travel_session='));
     assert.equal(fs.existsSync(path.join(dataDir, 'auth.json')), true);
@@ -31,7 +32,7 @@ test('accounts protect trip writes and keep membership across logins', async () 
     assert.ok(!fs.readFileSync(path.join(dataDir, 'auth.json'), 'utf8').includes('a long password 123'));
     assert.equal((await request('/api/auth/me', 'GET', undefined, alice.cookie)).data.user.id, alice.data.user.id);
     assert.equal((await request('/api/trips', 'POST', { title: '未定位的旅行', startDate: '2026-10-10', endDate: '2026-10-11' }, alice.cookie)).status, 400);
-    assert.equal((await request('/api/auth/register', 'POST', { name: '另一个', email: 'alice@example.test', password: 'another password 123' })).status, 409);
+    assert.equal((await request('/api/auth/register', 'POST', { name: '另一个', email: 'alice@example.test', password: 'another password 123', privacyAccepted: 'yes' })).status, 409);
     assert.equal((await request('/api/auth/login', 'POST', { email: 'alice@example.test', password: 'wrong password' })).status, 401);
     const tripResult = await request('/api/trips', 'POST', { title: '周末旅行', destination: '上海', center: [31.23, 121.47], startDate: '2026-10-10', endDate: '2026-10-11' }, alice.cookie);
     assert.equal(tripResult.status, 201);
@@ -40,7 +41,7 @@ test('accounts protect trip writes and keep membership across logins', async () 
     assert.equal(aliceMember.userId, alice.data.user.id);
     assert.equal((await request('/api/auth/trips', 'GET', undefined, alice.cookie)).data.trips[0].id, tripId);
     assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '擅自改名' })).status, 401);
-    const bob = await request('/api/auth/register', 'POST', { name: '小林', email: 'bob@example.test', password: 'another long password' });
+    const bob = await request('/api/auth/register', 'POST', { name: '小林', email: 'bob@example.test', password: 'another long password', privacyAccepted: 'yes' });
     assert.equal(bob.status, 201);
     assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { actorId: aliceMember.id, action: 'message', text: '冒名发言' }, bob.cookie)).status, 403);
     assert.equal((await request(`/api/trips/${tripId}/actions`, 'POST', { action: 'rename-trip', title: '未加入改名' }, bob.cookie)).status, 403);
